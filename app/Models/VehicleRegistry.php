@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class VehicleRegistry extends Model
@@ -24,4 +25,9 @@ class VehicleRegistry extends Model
         'odometer' => 'decimal:2',
         'is_out_of_service' => 'boolean',
     ];
+
+    public function trips(): HasMany
+    {
+        return $this->hasMany(Trip::class, 'vehicle_registry_id');
+    }
 }

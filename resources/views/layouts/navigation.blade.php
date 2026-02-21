@@ -51,6 +51,13 @@
             </a>
         </li>
 
+        <li class="menu-item {{ request()->routeIs('trip.*') ? 'active' : '' }}">
+            <a href="{{ route('trip.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons mdi mdi-map-marker-path"></i>
+                <div>Trip Management</div>
+            </a>
+        </li>
+
         <li class="menu-item">
             <a href="{{ route('logout') }}" class="menu-link" onclick="event.preventDefault();document.getElementById('logout-form').submit();">
                 <i class="menu-icon tf-icons mdi mdi-logout"></i>

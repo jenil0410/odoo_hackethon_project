@@ -7,6 +7,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserPermissionController;
 use App\Http\Controllers\VehicleRegistryController;
 use App\Http\Controllers\DriverController;
+use App\Http\Controllers\TripController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -46,6 +47,13 @@ Route::middleware('auth')->group(function () {
     Route::get('driver/fetch/{id}', [DriverController::class, 'fetch'])->name('driver.fetch');
     Route::get('driver/delete/{id}', [DriverController::class, 'destroy'])->name('driver.delete');
     Route::get('driver/{id}/can-assign', [DriverController::class, 'canAssign'])->name('driver.can-assign');
+
+    Route::get('trip', [TripController::class, 'index'])->name('trip.index');
+    Route::post('trip', [TripController::class, 'store'])->name('trip.store');
+    Route::put('trip/{id}', [TripController::class, 'update'])->name('trip.update');
+    Route::post('trip/{id}/status', [TripController::class, 'changeStatus'])->name('trip.status');
+    Route::get('trip/fetch/{id}', [TripController::class, 'fetch'])->name('trip.fetch');
+    Route::get('trip/delete/{id}', [TripController::class, 'destroy'])->name('trip.delete');
 });
 
 require __DIR__.'/auth.php';
