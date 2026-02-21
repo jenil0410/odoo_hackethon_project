@@ -361,4 +361,5 @@ class OperationalAnalyticsController extends Controller
 
         return response()->view($view, $data);
     }
+
 }
