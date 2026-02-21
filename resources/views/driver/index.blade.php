@@ -27,6 +27,19 @@
             padding: 0 !important;
         }
 
+        .filter-card {
+            background-color: #F4F7F6 !important;
+            border: 1px solid #E0E6E4;
+        }
+
+        .filter-card .form-control,
+        .filter-card .form-select,
+        .filter-card .select2-selection {
+            border-color: #E0E6E4 !important;
+            color: #1F2933 !important;
+            background-color: #fff !important;
+        }
+
         .driver-modal .modal-content {
             border-radius: 14px;
             border: 0;
@@ -79,6 +92,34 @@
 @endsection
 
 @section('content')
+    <div class="card mb-3 filter-card">
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label" for="status_filter">Status</label>
+                    <select class="form-select select2" id="status_filter">
+                        <option value="">All Statuses</option>
+                        @foreach ($statuses as $status)
+                            <option value="{{ $status }}">{{ ucfirst(str_replace('_', ' ', $status)) }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label" for="compliance_filter">Compliance</label>
+                    <select class="form-select select2" id="compliance_filter">
+                        <option value="">All</option>
+                        <option value="assignable">Assignable</option>
+                        <option value="blocked">Blocked</option>
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex gap-2">
+                    <button class="btn btn-primary" type="button" id="applyDriverFilters">Filter</button>
+                    <button class="btn btn-outline-secondary" type="button" id="resetDriverFilters">Reset</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="card">
         <div class="card-header d-flex align-items-center justify-content-between py-2 module-card-header">
             <h5 class="card-title m-0 me-2">Driver Management</h5>
@@ -264,7 +305,13 @@
                 serverSide: true,
                 dom: '<"flex-column flex-md-row"<"head-label text-center"><"dt-action-buttons text-end pt-3 pt-md-0"B>><"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6 d-flex justify-content-center justify-content-md-end"f>>t<"row"<"col-sm-12 col-md-6"i><"col-sm-12 col-md-6"p>>',
                 buttons: moduleTableButtons,
-                ajax: "{{ route('driver.index') }}",
+                ajax: {
+                    url: "{{ route('driver.index') }}",
+                    data: function(d) {
+                        d.status_filter = $('#status_filter').val();
+                        d.compliance_filter = $('#compliance_filter').val();
+                    }
+                },
                 columns: [
                     { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
                     { data: 'action', name: 'action', orderable: false, searchable: false },
@@ -277,6 +324,16 @@
                     { data: 'safety_score', name: 'safety_score', searchable: false },
                     { data: 'monthly_salary', name: 'monthly_salary', searchable: false }
                 ]
+            });
+
+            $('#applyDriverFilters').on('click', function() {
+                driverTable.ajax.reload();
+            });
+
+            $('#resetDriverFilters').on('click', function() {
+                $('#status_filter').val('').trigger('change');
+                $('#compliance_filter').val('').trigger('change');
+                driverTable.ajax.reload();
             });
 
             $('#openCreateDriverModal').on('click', function() {
@@ -454,4 +511,3 @@
         }
     </script>
 @endsection
-

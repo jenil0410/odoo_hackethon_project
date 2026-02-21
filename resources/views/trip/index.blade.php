@@ -27,6 +27,19 @@
             padding: 0 !important;
         }
 
+        .filter-card {
+            background-color: #F4F7F6 !important;
+            border: 1px solid #E0E6E4;
+        }
+
+        .filter-card .form-control,
+        .filter-card .form-select,
+        .filter-card .select2-selection {
+            border-color: #E0E6E4 !important;
+            color: #1F2933 !important;
+            background-color: #fff !important;
+        }
+
         .trip-modal .modal-content {
             border-radius: 14px;
             border: 0;
@@ -79,6 +92,45 @@
 @endsection
 
 @section('content')
+    <div class="card mb-3 filter-card">
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label" for="status_filter">Status</label>
+                    <select class="form-select select2" id="status_filter">
+                        <option value="">All Statuses</option>
+                        <option value="draft">Draft</option>
+                        <option value="dispatched">Dispatched</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label" for="vehicle_filter">Vehicle</label>
+                    <select class="form-select select2" id="vehicle_filter">
+                        <option value="">All Vehicles</option>
+                        @foreach ($filterVehicles as $vehicle)
+                            <option value="{{ $vehicle->id }}">{{ $vehicle->name_model }} ({{ $vehicle->license_plate }})</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label" for="driver_filter">Driver</label>
+                    <select class="form-select select2" id="driver_filter">
+                        <option value="">All Drivers</option>
+                        @foreach ($filterDrivers as $driver)
+                            <option value="{{ $driver->id }}">{{ $driver->full_name }} ({{ $driver->license_number }})</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex gap-2">
+                    <button class="btn btn-primary" type="button" id="applyTripFilters">Filter</button>
+                    <button class="btn btn-outline-secondary" type="button" id="resetTripFilters">Reset</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="card">
         <div class="card-header d-flex align-items-center justify-content-between py-2 module-card-header">
             <h5 class="card-title m-0 me-2">Trip Dispatcher & Management</h5>
@@ -291,7 +343,14 @@
                 serverSide: true,
                 dom: '<"flex-column flex-md-row"<"head-label text-center"><"dt-action-buttons text-end pt-3 pt-md-0"B>><"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6 d-flex justify-content-center justify-content-md-end"f>>t<"row"<"col-sm-12 col-md-6"i><"col-sm-12 col-md-6"p>>',
                 buttons: moduleTableButtons,
-                ajax: "{{ route('trip.index') }}",
+                ajax: {
+                    url: "{{ route('trip.index') }}",
+                    data: function(d) {
+                        d.status_filter = $('#status_filter').val();
+                        d.vehicle_filter = $('#vehicle_filter').val();
+                        d.driver_filter = $('#driver_filter').val();
+                    }
+                },
                 columns: [
                     { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
                     { data: 'action', name: 'action', orderable: false, searchable: false },
@@ -303,6 +362,17 @@
                     { data: 'estimated_fuel_cost', name: 'estimated_fuel_cost', searchable: false },
                     { data: 'status', name: 'status', searchable: false }
                 ]
+            });
+
+            $('#applyTripFilters').on('click', function() {
+                tripTable.ajax.reload();
+            });
+
+            $('#resetTripFilters').on('click', function() {
+                $('#status_filter').val('').trigger('change');
+                $('#vehicle_filter').val('').trigger('change');
+                $('#driver_filter').val('').trigger('change');
+                tripTable.ajax.reload();
             });
 
             $('#openCreateTripModal').on('click', function() {
@@ -578,4 +648,3 @@
         }
     </script>
 @endsection
-

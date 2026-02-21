@@ -33,6 +33,10 @@ class UserController extends Controller
                 });
             }
 
+            if ($request->filled('gender_filter')) {
+                $baseQuery->where('gender', $request->gender_filter);
+            }
+
             $search = trim((string) data_get($request->input('search'), 'value', ''));
             $draw = (int) $request->input('draw', 1);
             $start = max(0, (int) $request->input('start', 0));
@@ -102,8 +106,9 @@ class UserController extends Controller
             ->where('name', '!=', 'Master Admin')
             ->orderBy('name')
             ->get();
+        $genders = ['male', 'female', 'other'];
 
-        return view('user.index', compact('request', 'roles'));
+        return view('user.index', compact('request', 'roles', 'genders'));
     }
 
     public function create()

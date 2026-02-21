@@ -26,6 +26,19 @@
             padding: 0 !important;
         }
 
+        .filter-card {
+            background-color: #F4F7F6 !important;
+            border: 1px solid #E0E6E4;
+        }
+
+        .filter-card .form-control,
+        .filter-card .form-select,
+        .filter-card .select2-selection {
+            border-color: #E0E6E4 !important;
+            color: #1F2933 !important;
+            background-color: #fff !important;
+        }
+
         .dt-button-collection {
             min-width: 223px !important;
             background-color: #fff !important;
@@ -73,6 +86,26 @@
 @endsection
 
 @section('content')
+<div class="card mb-3 filter-card">
+    <div class="card-body">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label" for="guard_name_filter">Guard</label>
+                <select class="form-select select2" id="guard_name_filter">
+                    <option value="">All Guards</option>
+                    @foreach ($guards as $guard)
+                        <option value="{{ $guard }}">{{ $guard }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-md-4 d-flex gap-2">
+                <button class="btn btn-primary" type="button" id="applyRoleFilters">Filter</button>
+                <button class="btn btn-outline-secondary" type="button" id="resetRoleFilters">Reset</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="card">
     <div class="card-header d-flex align-items-center justify-content-between py-2 module-card-header">
         <h5 class="card-title m-0 me-2 text-secondary">Role</h5>
@@ -130,13 +163,27 @@ $(function () {
         serverSide: true,
         dom: '<"flex-column flex-md-row"<"head-label text-center"><"dt-action-buttons text-end pt-3 pt-md-0"B>><"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6 d-flex justify-content-center justify-content-md-end"f>>t<"row"<"col-sm-12 col-md-6"i><"col-sm-12 col-md-6"p>>',
         buttons: moduleTableButtons,
-        ajax: "{{ route('role.index') }}",
+        ajax: {
+            url: "{{ route('role.index') }}",
+            data: function(d) {
+                d.guard_name_filter = $('#guard_name_filter').val();
+            }
+        },
         columns: [
             { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
             { data: 'action', name: 'action', orderable: false, searchable: false },
             { data: 'name', name: 'name' },
             { data: 'guard_name', name: 'guard_name' }
         ]
+    });
+
+    $('#applyRoleFilters').on('click', function() {
+        $('#role_table').DataTable().ajax.reload();
+    });
+
+    $('#resetRoleFilters').on('click', function() {
+        $('#guard_name_filter').val('').trigger('change');
+        $('#role_table').DataTable().ajax.reload();
     });
 });
 
@@ -163,4 +210,3 @@ function deleteRole(id, name) {
 }
 </script>
 @endsection
-

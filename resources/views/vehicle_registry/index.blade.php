@@ -27,6 +27,19 @@
             padding: 0 !important;
         }
 
+        .filter-card {
+            background-color: #F4F7F6 !important;
+            border: 1px solid #E0E6E4;
+        }
+
+        .filter-card .form-control,
+        .filter-card .form-select,
+        .filter-card .select2-selection {
+            border-color: #E0E6E4 !important;
+            color: #1F2933 !important;
+            background-color: #fff !important;
+        }
+
         .vehicle-modal .modal-content {
             border-radius: 14px;
             border: 0;
@@ -79,6 +92,35 @@
 @endsection
 
 @section('content')
+    <div class="card mb-3 filter-card">
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label" for="status_filter">Status</label>
+                    <select class="form-select select2" id="status_filter">
+                        <option value="">All Statuses</option>
+                        <option value="available">Available</option>
+                        <option value="in_shop">In Shop</option>
+                        <option value="out_of_service">Out of Service</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label" for="load_unit_filter">Load Unit</label>
+                    <select class="form-select select2" id="load_unit_filter">
+                        <option value="">All Units</option>
+                        @foreach ($loadUnits as $unit)
+                            <option value="{{ $unit }}">{{ strtoupper($unit) }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex gap-2">
+                    <button class="btn btn-primary" type="button" id="applyVehicleFilters">Filter</button>
+                    <button class="btn btn-outline-secondary" type="button" id="resetVehicleFilters">Reset</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="card">
         <div class="card-header d-flex align-items-center justify-content-between py-2 module-card-header">
             <h5 class="card-title m-0 me-2">Vehicle Registry</h5>
@@ -220,7 +262,13 @@
                 serverSide: true,
                 dom: '<"flex-column flex-md-row"<"head-label text-center"><"dt-action-buttons text-end pt-3 pt-md-0"B>><"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6 d-flex justify-content-center justify-content-md-end"f>>t<"row"<"col-sm-12 col-md-6"i><"col-sm-12 col-md-6"p>>',
                 buttons: moduleTableButtons,
-                ajax: "{{ route('vehicle-registry.index') }}",
+                ajax: {
+                    url: "{{ route('vehicle-registry.index') }}",
+                    data: function(d) {
+                        d.status_filter = $('#status_filter').val();
+                        d.load_unit_filter = $('#load_unit_filter').val();
+                    }
+                },
                 columns: [
                     { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
                     { data: 'action', name: 'action', orderable: false, searchable: false },
@@ -231,6 +279,16 @@
                     { data: 'acquisition_cost', name: 'acquisition_cost', searchable: false },
                     { data: 'is_out_of_service', name: 'is_out_of_service', orderable: false, searchable: false }
                 ]
+            });
+
+            $('#applyVehicleFilters').on('click', function() {
+                vehicleTable.ajax.reload();
+            });
+
+            $('#resetVehicleFilters').on('click', function() {
+                $('#status_filter').val('').trigger('change');
+                $('#load_unit_filter').val('').trigger('change');
+                vehicleTable.ajax.reload();
             });
 
             $('#load_unit').on('change', function() {
@@ -398,4 +456,3 @@
         }
     </script>
 @endsection
-

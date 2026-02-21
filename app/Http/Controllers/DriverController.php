@@ -20,6 +20,20 @@ class DriverController extends Controller
 
         if ($request->ajax()) {
             $query = Driver::query()->latest();
+
+            if ($request->filled('status_filter')) {
+                $query->where('status', $request->status_filter);
+            }
+
+            if ($request->filled('compliance_filter')) {
+                if ($request->compliance_filter === 'assignable') {
+                    $query->whereDate('license_expiry_date', '>=', now()->toDateString());
+                }
+                if ($request->compliance_filter === 'blocked') {
+                    $query->whereDate('license_expiry_date', '<', now()->toDateString());
+                }
+            }
+
             $search = trim((string) data_get($request->input('search'), 'value', ''));
             $draw = (int) $request->input('draw', 1);
             $start = max(0, (int) $request->input('start', 0));
@@ -97,7 +111,9 @@ class DriverController extends Controller
             ]);
         }
 
-        return view('driver.index', compact('createCheck'));
+        $statuses = ['on_duty', 'off_duty', 'suspended'];
+
+        return view('driver.index', compact('createCheck', 'statuses'));
     }
 
     public function fetch(string $id)

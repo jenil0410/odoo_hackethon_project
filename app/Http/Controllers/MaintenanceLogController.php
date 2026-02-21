@@ -24,6 +24,14 @@ class MaintenanceLogController extends Controller
                 ->with(['vehicle:id,name_model,license_plate'])
                 ->latest();
 
+            if ($request->filled('status_filter')) {
+                $query->where('status', $request->status_filter);
+            }
+
+            if ($request->filled('vehicle_filter')) {
+                $query->where('vehicle_registry_id', $request->vehicle_filter);
+            }
+
             $search = trim((string) data_get($request->input('search'), 'value', ''));
             $draw = (int) $request->input('draw', 1);
             $start = max(0, (int) $request->input('start', 0));
