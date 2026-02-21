@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Driver;
 use App\Models\Permission;
+use App\Models\Trip;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -20,9 +21,23 @@ class DriverController extends Controller
 
         if ($request->ajax()) {
             $query = Driver::query()->latest();
+            $dispatchedDriverIds = Trip::query()
+                ->where('status', 'dispatched')
+                ->distinct()
+                ->pluck('driver_id')
+                ->filter()
+                ->values();
 
             if ($request->filled('status_filter')) {
-                $query->where('status', $request->status_filter);
+                $statusFilter = (string) $request->status_filter;
+                if ($statusFilter === 'on_trip') {
+                    $query->whereIn('id', $dispatchedDriverIds->all());
+                } else {
+                    $query->where('status', $statusFilter);
+                    if ($statusFilter === 'on_duty') {
+                        $query->whereNotIn('id', $dispatchedDriverIds->all());
+                    }
+                }
             }
 
             if ($request->filled('compliance_filter')) {
@@ -54,7 +69,7 @@ class DriverController extends Controller
             $recordsFiltered = (clone $query)->count();
             $drivers = $query->skip($start)->take($length)->get();
 
-            $data = $drivers->values()->map(function ($row, $idx) use ($start, $readCheck, $updateCheck, $deleteCheck, $isSuperAdmin) {
+            $data = $drivers->values()->map(function ($row, $idx) use ($start, $readCheck, $updateCheck, $deleteCheck, $isSuperAdmin, $dispatchedDriverIds) {
                 $html = '';
 
                 if ($updateCheck || $isSuperAdmin) {
@@ -71,6 +86,8 @@ class DriverController extends Controller
                     $action = '<div class="dropdown"><button type="button" class="btn btn-primary px-1 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">Action</button><div class="dropdown-menu">'.$html.'</div></div>';
                 }
 
+                $isOnTrip = $dispatchedDriverIds->contains($row->id);
+
                 $statusText = match ($row->status) {
                     'on_duty' => 'On Duty',
                     'off_duty' => 'Off Duty',
@@ -78,12 +95,14 @@ class DriverController extends Controller
                     default => ucfirst(str_replace('_', ' ', $row->status)),
                 };
 
-                $statusBadge = match ($row->status) {
-                    'on_duty' => '<span class="badge bg-label-success">On Duty</span>',
-                    'off_duty' => '<span class="badge bg-label-secondary">Off Duty</span>',
-                    'suspended' => '<span class="badge bg-label-danger">Suspended</span>',
-                    default => '<span class="badge bg-label-primary">'.e($statusText).'</span>',
-                };
+                $statusBadge = $isOnTrip
+                    ? '<span class="badge bg-label-primary">On Trip</span>'
+                    : match ($row->status) {
+                        'on_duty' => '<span class="badge bg-label-success">On Duty</span>',
+                        'off_duty' => '<span class="badge bg-label-secondary">Off Duty</span>',
+                        'suspended' => '<span class="badge bg-label-danger">Suspended</span>',
+                        default => '<span class="badge bg-label-primary">'.e($statusText).'</span>',
+                    };
 
                 $complianceBadge = $row->canBeAssigned()
                     ? '<span class="badge bg-label-success">Assignable</span>'
@@ -111,7 +130,7 @@ class DriverController extends Controller
             ]);
         }
 
-        $statuses = ['on_duty', 'off_duty', 'suspended'];
+        $statuses = ['on_trip', 'on_duty', 'off_duty', 'suspended'];
 
         return view('driver.index', compact('createCheck', 'statuses'));
     }

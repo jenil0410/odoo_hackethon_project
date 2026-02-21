@@ -100,6 +100,7 @@
                     <select class="form-select select2" id="status_filter">
                         <option value="">All Statuses</option>
                         <option value="available">Available</option>
+                        <option value="on_trip">On Trip</option>
                         <option value="in_shop">In Shop</option>
                         <option value="out_of_service">Out of Service</option>
                     </select>

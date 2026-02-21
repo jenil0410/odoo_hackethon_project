@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\MaintenanceLog;
+use App\Models\Permission;
 use App\Models\Trip;
 use App\Models\VehicleRegistry;
 use Illuminate\Http\Request;
@@ -11,6 +12,9 @@ class DashboardController extends Controller
 {
     public function index(Request $request)
     {
+        $canRead = Permission::checkCRUDPermissionToUser('Dashboard', 'read') || Permission::isSuperAdmin();
+        abort_unless($canRead, 403);
+
         $selectedVehicleType = (string) $request->input('vehicle_type', 'all');
         $selectedStatus = (string) $request->input('status', 'all');
         $selectedRegion = (string) $request->input('region', 'all');
@@ -187,4 +191,3 @@ class DashboardController extends Controller
         return 'idle';
     }
 }
-

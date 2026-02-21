@@ -11,9 +11,26 @@
         }
 
         .command-title {
-            color: var(--brand-primary);
+            color: #fff;
             font-weight: 700;
             letter-spacing: 0.4px;
+        }
+
+        .dashboard-header {
+            background-color: var(--brand-primary);
+            border-radius: 10px;
+            padding: 10px 14px;
+        }
+
+        .addButton {
+            color: #fff !important;
+            background-color: transparent !important;
+            border: 1px solid #fff !important;
+        }
+
+        .addButton:hover {
+            color: #1F7A4C !important;
+            background-color: #fff !important;
         }
 
         .command-filter-wrap {
@@ -42,6 +59,24 @@
             color: #8a97a4;
         }
 
+        .select2-container--default .select2-selection--single {
+            height: 38px;
+            border: 1px solid var(--brand-border) !important;
+            border-radius: 8px !important;
+            background: #fff !important;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 36px;
+            color: var(--brand-text) !important;
+            padding-left: 12px;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 36px;
+            right: 8px;
+        }
+
         .command-cta {
             border: 1px solid var(--brand-primary);
             color: #fff;
@@ -51,11 +86,12 @@
         }
 
         .command-cta-outline {
-            border: 1px solid var(--brand-primary);
+            border: 2px solid var(--brand-primary);
             color: var(--brand-primary);
-            background: transparent;
+            background: #fff;
             border-radius: 10px;
             font-weight: 600;
+            box-shadow: 0 0 0 1px rgba(31, 122, 76, 0.08);
         }
 
         .command-cta:hover,
@@ -148,11 +184,11 @@
 
 @section('content')
     <div class="command-board mt-3 mb-3">
-        <div class="d-flex justify-content-between align-items-center">
-            <h5 class="mb-0 command-title">Fleet Flow | Command Center (Main Dashboard)</h5>
+        <div class="d-flex justify-content-between align-items-center dashboard-header">
+            <h5 class="mb-0 command-title">Fleet Flow Dashboard</h5>
             <div class="d-flex gap-2">
-                <a href="{{ route('trip.index') }}" class="btn command-cta-outline">New Trip</a>
-                <a href="{{ route('vehicle-registry.index') }}" class="btn command-cta-outline">New Vehicle</a>
+                <a href="{{ route('trip.index') }}" class="btn btn-primary waves-effect waves-light addButton">New Trip</a>
+                <a href="{{ route('vehicle-registry.index') }}" class="btn btn-primary waves-effect waves-light addButton">New Vehicle</a>
             </div>
         </div>
 
@@ -168,7 +204,7 @@
             </div>
             <div class="col-xl-2 col-lg-3 col-md-6">
                 <label class="command-filter-label">Vehicle Type</label>
-                <select name="vehicle_type" class="form-select command-filter-control">
+                <select name="vehicle_type" class="form-select command-filter-control select2 command-select2">
                     <option value="all" {{ $selectedVehicleType === 'all' ? 'selected' : '' }}>Truck/Van/Bike</option>
                     <option value="truck" {{ $selectedVehicleType === 'truck' ? 'selected' : '' }}>Truck</option>
                     <option value="van" {{ $selectedVehicleType === 'van' ? 'selected' : '' }}>Van</option>
@@ -177,7 +213,7 @@
             </div>
             <div class="col-xl-2 col-lg-3 col-md-6">
                 <label class="command-filter-label">Status</label>
-                <select name="status" class="form-select command-filter-control">
+                <select name="status" class="form-select command-filter-control select2 command-select2">
                     <option value="all" {{ $selectedStatus === 'all' ? 'selected' : '' }}>All Statuses</option>
                     <option value="on_trip" {{ $selectedStatus === 'on_trip' ? 'selected' : '' }}>On Trip</option>
                     <option value="in_shop" {{ $selectedStatus === 'in_shop' ? 'selected' : '' }}>In Shop</option>
@@ -187,7 +223,7 @@
             </div>
             <div class="col-xl-2 col-lg-3 col-md-6">
                 <label class="command-filter-label">Region</label>
-                <select name="region" class="form-select command-filter-control">
+                <select name="region" class="form-select command-filter-control select2 command-select2">
                     <option value="all" {{ $selectedRegion === 'all' ? 'selected' : '' }}>All Regions</option>
                     @foreach ($commandCenterRegions as $region)
                         <option value="{{ $region }}" {{ $selectedRegion === $region ? 'selected' : '' }}>{{ $region }}</option>
@@ -270,6 +306,11 @@
 @section('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            $('.command-select2').select2({
+                width: '100%',
+                minimumResultsForSearch: -1
+            });
+
             const monthPicker = flatpickr('#dashboard_month_picker', {
                 defaultDate: "{{ $selectedMonth }}-01",
                 dateFormat: 'Y-m',

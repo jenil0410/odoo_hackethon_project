@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Permission;
+use App\Models\Trip;
 use App\Models\VehicleRegistry;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -20,6 +21,12 @@ class VehicleRegistryController extends Controller
 
         if ($request->ajax()) {
             $query = VehicleRegistry::query()->latest();
+            $dispatchedVehicleIds = Trip::query()
+                ->where('status', 'dispatched')
+                ->distinct()
+                ->pluck('vehicle_registry_id')
+                ->filter()
+                ->values();
 
             if ($request->filled('status_filter')) {
                 $status = (string) $request->status_filter;
@@ -27,8 +34,12 @@ class VehicleRegistryController extends Controller
                     $query->where('is_out_of_service', true);
                 } elseif ($status === 'in_shop') {
                     $query->where('is_out_of_service', false)->where('is_in_shop', true);
+                } elseif ($status === 'on_trip') {
+                    $query->whereIn('id', $dispatchedVehicleIds->all());
                 } elseif ($status === 'available') {
-                    $query->where('is_out_of_service', false)->where('is_in_shop', false);
+                    $query->where('is_out_of_service', false)
+                        ->where('is_in_shop', false)
+                        ->whereNotIn('id', $dispatchedVehicleIds->all());
                 }
             }
 
@@ -57,7 +68,7 @@ class VehicleRegistryController extends Controller
             $recordsFiltered = (clone $query)->count();
             $vehicles = $query->skip($start)->take($length)->get();
 
-            $data = $vehicles->values()->map(function ($row, $idx) use ($start, $readCheck, $updateCheck, $deleteCheck, $isSuperAdmin) {
+            $data = $vehicles->values()->map(function ($row, $idx) use ($start, $readCheck, $updateCheck, $deleteCheck, $isSuperAdmin, $dispatchedVehicleIds) {
                 $html = '';
 
                 if ($updateCheck || $isSuperAdmin) {
@@ -74,6 +85,8 @@ class VehicleRegistryController extends Controller
                     $action = '<div class="dropdown"><button type="button" class="btn btn-primary px-1 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">Action</button><div class="dropdown-menu">'.$html.'</div></div>';
                 }
 
+                $isOnTrip = $dispatchedVehicleIds->contains($row->id);
+
                 return [
                     'DT_RowIndex' => $start + $idx + 1,
                     'action' => $action,
@@ -86,7 +99,9 @@ class VehicleRegistryController extends Controller
                         ? '<span class="badge bg-label-danger">Out of Service</span>'
                         : ($row->is_in_shop
                             ? '<span class="badge bg-label-warning">In Shop</span>'
-                            : '<span class="badge bg-label-success">Available</span>'),
+                            : ($isOnTrip
+                                ? '<span class="badge bg-label-primary">On Trip</span>'
+                                : '<span class="badge bg-label-success">Available</span>')),
                 ];
             })->all();
 

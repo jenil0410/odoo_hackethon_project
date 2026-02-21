@@ -255,6 +255,9 @@
                             data-parsley-errors-container="#trip_status_err">
                             <option value="">Select status</option>
                         </select>
+                        <small class="text-muted d-block mt-2" id="trip_status_flow_hint">
+                            Flow: Draft -> On Trip -> Completed. Cancelled is allowed before completion.
+                        </small>
                         <small id="trip_status_err" class="red-text"></small>
                         <div class="row g-3 mt-1 d-none" id="trip_completion_fields">
                             <div class="col-md-6">
@@ -592,6 +595,7 @@
 
         function openTripStatusModal(id, currentStatus) {
             const $status = $('#next_trip_status');
+            const $hint = $('#trip_status_flow_hint');
             const transitions = {
                 draft: ['dispatched', 'cancelled'],
                 dispatched: ['completed', 'cancelled'],
@@ -599,12 +603,30 @@
                 cancelled: []
             };
             const statusOptions = transitions[currentStatus] || [];
+            const labels = {
+                dispatched: 'On Trip',
+                completed: 'Completed',
+                cancelled: 'Cancelled',
+                draft: 'Draft'
+            };
 
             $status.empty().append('<option value="">Select status</option>');
             statusOptions.forEach(function(status) {
-                const label = status.charAt(0).toUpperCase() + status.slice(1);
+                const label = labels[status] || (status.charAt(0).toUpperCase() + status.slice(1));
                 $status.append('<option value="' + status + '">' + label + '</option>');
             });
+
+            if (currentStatus === 'draft') {
+                $hint.text('Current: Draft. Next: On Trip or Cancelled.');
+            } else if (currentStatus === 'dispatched') {
+                $hint.text('Current: On Trip. Next: Completed or Cancelled.');
+            } else if (currentStatus === 'completed') {
+                $hint.text('Current: Completed. No further status changes allowed.');
+            } else if (currentStatus === 'cancelled') {
+                $hint.text('Current: Cancelled. No further status changes allowed.');
+            } else {
+                $hint.text('Flow: Draft -> On Trip -> Completed. Cancelled is allowed before completion.');
+            }
 
             $('#status_trip_id').val(id);
             $('#final_odometer').val('');
