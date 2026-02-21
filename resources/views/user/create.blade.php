@@ -77,7 +77,7 @@
                         <div class="form-floating form-floating-outline mb-4">
                             <input autocomplete="off" type="text" class="form-control flatpickr-date" name="date_of_birth"
                                 value="{{ old('date_of_birth') }}" id="date_of_birth" placeholder="YYYY-MM-DD"
-                                data-parsley-pattern="^(|\\d{4}-\\d{2}-\\d{2})$"
+                                data-parsley-pattern="^(|\d{4}-\d{2}-\d{2})$"
                                 data-parsley-pattern-message="Use date format YYYY-MM-DD." />
                             <label for="date_of_birth">Date of Birth</label>
                             @error('date_of_birth')

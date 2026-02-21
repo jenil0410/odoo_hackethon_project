@@ -44,6 +44,13 @@
             </a>
         </li>
 
+        <li class="menu-item {{ request()->routeIs('driver.*') ? 'active' : '' }}">
+            <a href="{{ route('driver.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons mdi mdi-steering"></i>
+                <div>Driver Management</div>
+            </a>
+        </li>
+
         <li class="menu-item">
             <a href="{{ route('logout') }}" class="menu-link" onclick="event.preventDefault();document.getElementById('logout-form').submit();">
                 <i class="menu-icon tf-icons mdi mdi-logout"></i>
