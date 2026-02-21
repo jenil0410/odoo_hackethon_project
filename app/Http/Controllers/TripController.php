@@ -111,7 +111,7 @@ class TripController extends Controller
     public function fetch(string $id)
     {
         $trip = Trip::with([
-            'vehicle:id,name_model,license_plate,max_load_capacity,load_unit,is_out_of_service',
+            'vehicle:id,name_model,license_plate,max_load_capacity,load_unit,status,is_out_of_service',
             'driver:id,full_name,license_number,status,license_expiry_date',
         ])
             ->findOrFail($id);
@@ -150,7 +150,7 @@ class TripController extends Controller
             return response()->json(['status' => false, 'errors' => $businessErrors], 422);
         }
 
-        Trip::create([
+        $trip = Trip::create([
             'vehicle_registry_id' => $vehicle->id,
             'driver_id' => $driver->id,
             'origin_address' => $request->origin_address,
@@ -159,6 +159,8 @@ class TripController extends Controller
             'estimated_fuel_cost' => $request->estimated_fuel_cost,
             'status' => 'draft',
         ]);
+        $this->syncVehicleStatusForTripStatusChange($trip, 'draft');
+        $this->syncDriverStatusForTripStatusChange($trip, 'draft');
 
         return response()->json([
             'status' => true,
@@ -169,6 +171,8 @@ class TripController extends Controller
     public function update(Request $request, string $id)
     {
         $trip = Trip::findOrFail($id);
+        $oldVehicleId = (int) $trip->vehicle_registry_id;
+        $oldDriverId = (int) $trip->driver_id;
 
         if ($trip->status !== 'draft') {
             return response()->json([
@@ -213,6 +217,20 @@ class TripController extends Controller
             'estimated_fuel_cost' => $request->estimated_fuel_cost,
         ]);
 
+        if ($oldVehicleId !== (int) $trip->vehicle_registry_id || $oldDriverId !== (int) $trip->driver_id) {
+            $oldAssignment = new Trip([
+                'vehicle_registry_id' => $oldVehicleId,
+                'driver_id' => $oldDriverId,
+            ]);
+            $oldAssignment->id = $trip->id;
+
+            $this->syncVehicleStatusForTripStatusChange($oldAssignment, 'cancelled');
+            $this->syncDriverStatusForTripStatusChange($oldAssignment, 'cancelled');
+
+            $this->syncVehicleStatusForTripStatusChange($trip, 'draft');
+            $this->syncDriverStatusForTripStatusChange($trip, 'draft');
+        }
+
         return response()->json([
             'status' => true,
             'message' => 'Trip updated successfully.',
@@ -231,7 +249,8 @@ class TripController extends Controller
         }
 
         $nextStatus = (string) $request->status;
-        if ($nextStatus === (string) $trip->status) {
+        $currentStatus = (string) $trip->status;
+        if ($nextStatus === $currentStatus) {
             return response()->json([
                 'status' => true,
                 'message' => 'Trip status is already '.ucfirst($nextStatus).'.',
@@ -248,6 +267,8 @@ class TripController extends Controller
         }
 
         $trip->update(['status' => $nextStatus]);
+        $this->syncVehicleStatusForTripStatusChange($trip, $nextStatus);
+        $this->syncDriverStatusForTripStatusChange($trip, $nextStatus);
 
         return response()->json([
             'status' => true,
@@ -263,6 +284,8 @@ class TripController extends Controller
         }
 
         $trip->delete();
+        $this->syncVehicleStatusForTripStatusChange($trip, 'cancelled');
+        $this->syncDriverStatusForTripStatusChange($trip, 'cancelled');
 
         return response()->json(['status' => true, 'message' => 'Trip deleted successfully.']);
     }
@@ -280,36 +303,49 @@ class TripController extends Controller
             $errors['cargo_weight'] = ['Cargo weight exceeds selected vehicle max capacity.'];
         }
 
-        if ($vehicle->is_out_of_service) {
-            $errors['vehicle_registry_id'] = ['Selected vehicle is out of service.'];
+        $activeStatuses = ['draft', 'dispatched'];
+        $vehicleReservedByCurrentTrip = $ignoreTripId !== null && Trip::query()
+            ->where('id', $ignoreTripId)
+            ->where('vehicle_registry_id', $vehicle->id)
+            ->whereIn('status', $activeStatuses)
+            ->exists();
+
+        if (! $vehicle->canBeAssigned() && ! $vehicleReservedByCurrentTrip) {
+            $errors['vehicle_registry_id'] = ['Selected vehicle must be available for trip assignment.'];
         }
 
-        $dispatchedVehicleTrip = Trip::query()
-            ->where('status', 'dispatched')
+        $activeVehicleTrip = Trip::query()
+            ->whereIn('status', $activeStatuses)
             ->where('vehicle_registry_id', $vehicle->id)
             ->when($ignoreTripId, fn ($q) => $q->where('id', '!=', $ignoreTripId))
             ->exists();
 
-        if ($dispatchedVehicleTrip) {
-            $errors['vehicle_registry_id'] = ['Selected vehicle is currently on a dispatched trip.'];
+        if ($activeVehicleTrip) {
+            $errors['vehicle_registry_id'] = ['Selected vehicle is currently assigned to another active trip.'];
         }
 
-        if ($driver->status !== 'on_duty') {
-            $errors['driver_id'] = ['Selected driver is not on duty.'];
+        $driverReservedByCurrentTrip = $ignoreTripId !== null && Trip::query()
+            ->where('id', $ignoreTripId)
+            ->where('driver_id', $driver->id)
+            ->whereIn('status', $activeStatuses)
+            ->exists();
+
+        if ($driver->status !== Driver::STATUS_AVAILABLE && ! $driverReservedByCurrentTrip) {
+            $errors['driver_id'] = ['Selected driver must be available.'];
         }
 
-        if (! $driver->canBeAssigned()) {
+        if ($driver->is_license_expired) {
             $errors['driver_id'] = ['Selected driver has an expired license.'];
         }
 
-        $dispatchedDriverTrip = Trip::query()
-            ->where('status', 'dispatched')
+        $activeDriverTrip = Trip::query()
+            ->whereIn('status', $activeStatuses)
             ->where('driver_id', $driver->id)
             ->when($ignoreTripId, fn ($q) => $q->where('id', '!=', $ignoreTripId))
             ->exists();
 
-        if ($dispatchedDriverTrip) {
-            $errors['driver_id'] = ['Selected driver is currently on a dispatched trip.'];
+        if ($activeDriverTrip) {
+            $errors['driver_id'] = ['Selected driver is currently assigned to another active trip.'];
         }
 
         return $errors;
@@ -317,24 +353,98 @@ class TripController extends Controller
 
     private function availableVehicles()
     {
-        $busyVehicleIds = Trip::query()->where('status', 'dispatched')->pluck('vehicle_registry_id');
+        $busyVehicleIds = Trip::query()
+            ->whereIn('status', ['draft', 'dispatched'])
+            ->pluck('vehicle_registry_id');
 
         return VehicleRegistry::query()
-            ->where('is_out_of_service', false)
+            ->whereIn('status', VehicleRegistry::assignableStatuses())
             ->whereNotIn('id', $busyVehicleIds)
             ->orderBy('name_model')
-            ->get(['id', 'name_model', 'license_plate', 'max_load_capacity', 'load_unit']);
+            ->get(['id', 'name_model', 'license_plate', 'max_load_capacity', 'load_unit', 'status']);
     }
 
     private function availableDrivers()
     {
-        $busyDriverIds = Trip::query()->where('status', 'dispatched')->pluck('driver_id');
+        $busyDriverIds = Trip::query()
+            ->whereIn('status', ['draft', 'dispatched'])
+            ->pluck('driver_id');
 
         return Driver::query()
-            ->where('status', 'on_duty')
+            ->where('status', Driver::STATUS_AVAILABLE)
             ->whereDate('license_expiry_date', '>=', now()->toDateString())
             ->whereNotIn('id', $busyDriverIds)
             ->orderBy('full_name')
-            ->get(['id', 'full_name', 'license_number']);
+            ->get(['id', 'full_name', 'license_number', 'status']);
+    }
+
+    private function syncDriverStatusForTripStatusChange(Trip $trip, string $nextStatus): void
+    {
+        $driver = Driver::find($trip->driver_id);
+        if (! $driver) {
+            return;
+        }
+
+        if (in_array($nextStatus, ['draft', 'dispatched'], true)) {
+            $driver->update(['status' => Driver::STATUS_ON_TRIP]);
+
+            return;
+        }
+
+        if (! in_array($nextStatus, ['completed', 'cancelled'], true)) {
+            return;
+        }
+
+        if ($driver->status !== Driver::STATUS_ON_TRIP) {
+            return;
+        }
+
+        $hasOtherActiveTrip = Trip::query()
+            ->whereIn('status', ['draft', 'dispatched'])
+            ->where('driver_id', $driver->id)
+            ->where('id', '!=', $trip->id)
+            ->exists();
+
+        if (! $hasOtherActiveTrip) {
+            $driver->update(['status' => Driver::STATUS_AVAILABLE]);
+        }
+    }
+
+    private function syncVehicleStatusForTripStatusChange(Trip $trip, string $nextStatus): void
+    {
+        $vehicle = VehicleRegistry::find($trip->vehicle_registry_id);
+        if (! $vehicle) {
+            return;
+        }
+
+        if (in_array($nextStatus, ['draft', 'dispatched'], true)) {
+            $vehicle->update([
+                'status' => VehicleRegistry::STATUS_ON_TRIP,
+                'is_out_of_service' => true,
+            ]);
+
+            return;
+        }
+
+        if (! in_array($nextStatus, ['completed', 'cancelled'], true)) {
+            return;
+        }
+
+        if ($vehicle->status !== VehicleRegistry::STATUS_ON_TRIP) {
+            return;
+        }
+
+        $hasOtherActiveTrip = Trip::query()
+            ->whereIn('status', ['draft', 'dispatched'])
+            ->where('vehicle_registry_id', $vehicle->id)
+            ->where('id', '!=', $trip->id)
+            ->exists();
+
+        if (! $hasOtherActiveTrip) {
+            $vehicle->update([
+                'status' => VehicleRegistry::STATUS_AVAILABLE,
+                'is_out_of_service' => false,
+            ]);
+        }
     }
 }

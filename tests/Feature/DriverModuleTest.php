@@ -49,13 +49,14 @@ class DriverModuleTest extends TestCase
             'total_trips' => 100,
             'completed_trips' => 95,
             'safety_score' => 88.5,
-            'status' => 'on_duty',
+            'status' => 'available',
         ]);
 
         $response->assertOk()->assertJson(['status' => true]);
         $this->assertDatabaseHas('drivers', [
             'license_number' => 'DL-12345',
             'full_name' => 'Alex Driver',
+            'status' => 'available',
         ]);
     }
 

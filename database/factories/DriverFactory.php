@@ -26,7 +26,7 @@ class DriverFactory extends Factory
             'total_trips' => $totalTrips,
             'completed_trips' => $completedTrips,
             'safety_score' => fake()->randomFloat(2, 0, 100),
-            'status' => fake()->randomElement(['on_duty', 'off_duty', 'suspended']),
+            'status' => fake()->randomElement(Driver::allowedStatuses()),
         ];
     }
 }

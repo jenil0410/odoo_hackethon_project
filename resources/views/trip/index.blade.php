@@ -89,7 +89,7 @@
                                             $maxKg = (float) $vehicle->max_load_capacity * ($vehicle->load_unit === 'tons' ? 1000 : 1);
                                         @endphp
                                         <option value="{{ $vehicle->id }}" data-max-kg="{{ $maxKg }}">
-                                            {{ $vehicle->name_model }} ({{ $vehicle->license_plate }}) - Max {{ rtrim(rtrim((string) $vehicle->max_load_capacity, '0'), '.') }} {{ $vehicle->load_unit }}
+                                            {{ $vehicle->name_model }} ({{ $vehicle->license_plate }}) - Max {{ rtrim(rtrim((string) $vehicle->max_load_capacity, '0'), '.') }} {{ $vehicle->load_unit }} - Status: {{ ucfirst(str_replace('_', ' ', $vehicle->status)) }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -103,7 +103,7 @@
                                     <option value="">Select Driver</option>
                                     @foreach ($drivers as $driver)
                                         <option value="{{ $driver->id }}">
-                                            {{ $driver->full_name }} ({{ $driver->license_number }})
+                                            {{ $driver->full_name }} ({{ $driver->license_number }}) - Status: {{ ucfirst(str_replace('_', ' ', $driver->status)) }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -361,15 +361,19 @@
 
                 if ($('#vehicle_registry_id option[value="' + row.vehicle_registry_id + '"]').length === 0 && row.vehicle) {
                     const maxKg = Number(row.vehicle.max_load_capacity) * (row.vehicle.load_unit === 'tons' ? 1000 : 1);
+                    const vehicleStatus = String(row.vehicle.status || '').replace('_', ' ');
                     const vehicleLabel = row.vehicle.name_model + ' (' + row.vehicle.license_plate + ') - Max ' +
-                        Number(row.vehicle.max_load_capacity).toFixed(2).replace(/\.00$/, '') + ' ' + row.vehicle.load_unit;
+                        Number(row.vehicle.max_load_capacity).toFixed(2).replace(/\.00$/, '') + ' ' + row.vehicle.load_unit +
+                        ' - Status: ' + (vehicleStatus ? vehicleStatus.charAt(0).toUpperCase() + vehicleStatus.slice(1) : 'Unknown');
                     $('#vehicle_registry_id').append(
                         $('<option>', { value: row.vehicle_registry_id, text: vehicleLabel }).attr('data-max-kg', maxKg)
                     );
                 }
 
                 if ($('#driver_id option[value="' + row.driver_id + '"]').length === 0 && row.driver) {
-                    const driverLabel = row.driver.full_name + ' (' + row.driver.license_number + ')';
+                    const driverStatus = String(row.driver.status || '').replace('_', ' ');
+                    const driverLabel = row.driver.full_name + ' (' + row.driver.license_number + ')' +
+                        ' - Status: ' + (driverStatus ? driverStatus.charAt(0).toUpperCase() + driverStatus.slice(1) : 'Unknown');
                     $('#driver_id').append(
                         $('<option>', { value: row.driver_id, text: driverLabel })
                     );

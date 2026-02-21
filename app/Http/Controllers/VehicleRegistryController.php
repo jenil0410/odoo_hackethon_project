@@ -31,6 +31,7 @@ class VehicleRegistryController extends Controller
                 $query->where(function ($q) use ($search) {
                     $q->where('name_model', 'like', "%{$search}%")
                         ->orWhere('license_plate', 'like', "%{$search}%")
+                        ->orWhere('status', 'like', "%{$search}%")
                         ->orWhere('load_unit', 'like', "%{$search}%")
                         ->orWhere('max_load_capacity', 'like', "%{$search}%")
                         ->orWhere('odometer', 'like', "%{$search}%");
@@ -57,6 +58,14 @@ class VehicleRegistryController extends Controller
                     $action = '<div class="dropdown"><button type="button" class="btn btn-primary px-1 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">Action</button><div class="dropdown-menu">'.$html.'</div></div>';
                 }
 
+                $statusBadge = match ($row->status) {
+                    VehicleRegistry::STATUS_AVAILABLE => '<span class="badge bg-label-success">Available</span>',
+                    VehicleRegistry::STATUS_ON_TRIP => '<span class="badge bg-label-warning">On Trip</span>',
+                    VehicleRegistry::STATUS_IN_SHOP => '<span class="badge bg-label-info">In Shop</span>',
+                    VehicleRegistry::STATUS_RETIRED => '<span class="badge bg-label-danger">Retired</span>',
+                    default => '<span class="badge bg-label-secondary">'.e(ucfirst(str_replace('_', ' ', (string) $row->status))).'</span>',
+                };
+
                 return [
                     'DT_RowIndex' => $start + $idx + 1,
                     'action' => $action,
@@ -64,9 +73,7 @@ class VehicleRegistryController extends Controller
                     'license_plate' => $row->license_plate,
                     'max_load_capacity' => rtrim(rtrim((string) $row->max_load_capacity, '0'), '.').' '.$row->load_unit,
                     'odometer' => number_format((float) $row->odometer, 2),
-                    'is_out_of_service' => $row->is_out_of_service
-                        ? '<span class="badge bg-label-danger">Out of Service</span>'
-                        : '<span class="badge bg-label-success">Active</span>',
+                    'status' => $statusBadge,
                 ];
             })->all();
 
@@ -99,7 +106,7 @@ class VehicleRegistryController extends Controller
             'max_load_capacity' => ['required', 'numeric', 'min:0'],
             'load_unit' => ['required', Rule::in(['kg', 'tons'])],
             'odometer' => ['required', 'numeric', 'min:0'],
-            'is_out_of_service' => ['nullable', 'boolean'],
+            'status' => ['required', Rule::in(VehicleRegistry::allowedStatuses())],
         ]);
 
         if ($validator->fails()) {
@@ -115,7 +122,8 @@ class VehicleRegistryController extends Controller
             'max_load_capacity' => $request->max_load_capacity,
             'load_unit' => $request->load_unit,
             'odometer' => $request->odometer,
-            'is_out_of_service' => (bool) $request->boolean('is_out_of_service'),
+            'status' => $request->status,
+            'is_out_of_service' => $request->status !== VehicleRegistry::STATUS_AVAILABLE,
         ]);
 
         return response()->json([
@@ -134,7 +142,7 @@ class VehicleRegistryController extends Controller
             'max_load_capacity' => ['required', 'numeric', 'min:0'],
             'load_unit' => ['required', Rule::in(['kg', 'tons'])],
             'odometer' => ['required', 'numeric', 'min:0'],
-            'is_out_of_service' => ['nullable', 'boolean'],
+            'status' => ['required', Rule::in(VehicleRegistry::allowedStatuses())],
         ]);
 
         if ($validator->fails()) {
@@ -150,7 +158,8 @@ class VehicleRegistryController extends Controller
             'max_load_capacity' => $request->max_load_capacity,
             'load_unit' => $request->load_unit,
             'odometer' => $request->odometer,
-            'is_out_of_service' => (bool) $request->boolean('is_out_of_service'),
+            'status' => $request->status,
+            'is_out_of_service' => $request->status !== VehicleRegistry::STATUS_AVAILABLE,
         ]);
 
         return response()->json([

@@ -11,6 +11,12 @@ class Driver extends Model
 {
     use HasFactory, SoftDeletes;
 
+    public const STATUS_ON_TRIP = 'on_trip';
+    public const STATUS_SUSPENDED = 'suspended';
+    public const STATUS_AVAILABLE = 'available';
+    public const STATUS_OFF_DUTY = 'off_duty';
+    public const STATUS_ON_DUTY = 'on_duty';
+
     protected $fillable = [
         'full_name',
         'email',
@@ -30,6 +36,25 @@ class Driver extends Model
         'safety_score' => 'decimal:2',
     ];
 
+    public static function allowedStatuses(): array
+    {
+        return [
+            self::STATUS_ON_TRIP,
+            self::STATUS_SUSPENDED,
+            self::STATUS_AVAILABLE,
+            self::STATUS_OFF_DUTY,
+            self::STATUS_ON_DUTY,
+        ];
+    }
+
+    public static function assignableStatuses(): array
+    {
+        return [
+            self::STATUS_AVAILABLE,
+            self::STATUS_ON_DUTY,
+        ];
+    }
+
     public function getTripCompletionRateAttribute(): float
     {
         if ((int) $this->total_trips === 0) {
@@ -46,7 +71,8 @@ class Driver extends Model
 
     public function canBeAssigned(): bool
     {
-        return ! $this->is_license_expired;
+        return in_array((string) $this->status, self::assignableStatuses(), true)
+            && ! $this->is_license_expired;
     }
 
     public function trips(): HasMany

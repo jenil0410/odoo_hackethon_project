@@ -58,16 +58,20 @@ class DriverController extends Controller
                 }
 
                 $statusText = match ($row->status) {
-                    'on_duty' => 'On Duty',
-                    'off_duty' => 'Off Duty',
-                    'suspended' => 'Suspended',
+                    Driver::STATUS_ON_TRIP => 'On Trip',
+                    Driver::STATUS_SUSPENDED => 'Suspended',
+                    Driver::STATUS_AVAILABLE => 'Available',
+                    Driver::STATUS_OFF_DUTY => 'Off Duty',
+                    Driver::STATUS_ON_DUTY => 'On Duty',
                     default => ucfirst(str_replace('_', ' ', $row->status)),
                 };
 
                 $statusBadge = match ($row->status) {
-                    'on_duty' => '<span class="badge bg-label-success">On Duty</span>',
-                    'off_duty' => '<span class="badge bg-label-secondary">Off Duty</span>',
-                    'suspended' => '<span class="badge bg-label-danger">Suspended</span>',
+                    Driver::STATUS_ON_TRIP => '<span class="badge bg-label-warning">On Trip</span>',
+                    Driver::STATUS_SUSPENDED => '<span class="badge bg-label-danger">Suspended</span>',
+                    Driver::STATUS_AVAILABLE => '<span class="badge bg-label-info">Available</span>',
+                    Driver::STATUS_OFF_DUTY => '<span class="badge bg-label-secondary">Off Duty</span>',
+                    Driver::STATUS_ON_DUTY => '<span class="badge bg-label-success">On Duty</span>',
                     default => '<span class="badge bg-label-primary">'.e($statusText).'</span>',
                 };
 
@@ -122,7 +126,7 @@ class DriverController extends Controller
             'total_trips' => ['required', 'integer', 'min:0'],
             'completed_trips' => ['required', 'integer', 'min:0', 'lte:total_trips'],
             'safety_score' => ['required', 'numeric', 'min:0', 'max:100'],
-            'status' => ['required', Rule::in(['on_duty', 'off_duty', 'suspended'])],
+            'status' => ['required', Rule::in(Driver::allowedStatuses())],
         ]);
 
         if ($validator->fails()) {
@@ -163,7 +167,7 @@ class DriverController extends Controller
             'total_trips' => ['required', 'integer', 'min:0'],
             'completed_trips' => ['required', 'integer', 'min:0', 'lte:total_trips'],
             'safety_score' => ['required', 'numeric', 'min:0', 'max:100'],
-            'status' => ['required', Rule::in(['on_duty', 'off_duty', 'suspended'])],
+            'status' => ['required', Rule::in(Driver::allowedStatuses())],
         ]);
 
         if ($validator->fails()) {

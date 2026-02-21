@@ -18,6 +18,7 @@ return new class extends Migration
             $table->decimal('max_load_capacity', 12, 2);
             $table->string('load_unit', 10); // kg or tons
             $table->decimal('odometer', 12, 2);
+            $table->string('status', 20)->default('available'); // available, on_trip, in_shop, retired
             $table->boolean('is_out_of_service')->default(false);
             $table->timestamps();
             $table->softDeletes();

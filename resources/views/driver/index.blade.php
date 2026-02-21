@@ -112,9 +112,11 @@
                                     data-parsley-required-message="Status is required."
                                     data-parsley-errors-container="#status_err">
                                     <option value="">Select Status</option>
-                                    <option value="on_duty">On Duty</option>
-                                    <option value="off_duty">Off Duty</option>
+                                    <option value="on_trip">On Trip</option>
                                     <option value="suspended">Suspended</option>
+                                    <option value="available">Available</option>
+                                    <option value="off_duty">Off Duty</option>
+                                    <option value="on_duty">On Duty</option>
                                 </select>
                                 <small class="red-text ml-10" id="status_err" role="alert"></small>
                             </div>

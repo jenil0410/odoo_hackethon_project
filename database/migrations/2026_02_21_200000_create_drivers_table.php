@@ -21,7 +21,7 @@ return new class extends Migration
             $table->unsignedInteger('total_trips')->default(0);
             $table->unsignedInteger('completed_trips')->default(0);
             $table->decimal('safety_score', 5, 2)->default(0);
-            $table->string('status', 20)->default('off_duty'); // on_duty, off_duty, suspended
+            $table->string('status', 20)->default('off_duty'); // on_trip, suspended, available, off_duty, on_duty
             $table->timestamps();
             $table->softDeletes();
         });

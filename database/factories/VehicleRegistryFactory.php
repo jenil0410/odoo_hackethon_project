@@ -19,6 +19,8 @@ class VehicleRegistryFactory extends Factory
             ? fake()->numberBetween(800, 35000)
             : fake()->randomFloat(2, 1, 40);
 
+        $status = fake()->randomElement(VehicleRegistry::allowedStatuses());
+
         return [
             'name_model' => fake()->randomElement([
                 'Volvo FH16',
@@ -31,7 +33,8 @@ class VehicleRegistryFactory extends Factory
             'max_load_capacity' => $capacity,
             'load_unit' => $unit,
             'odometer' => fake()->randomFloat(2, 1000, 500000),
-            'is_out_of_service' => fake()->boolean(15),
+            'status' => $status,
+            'is_out_of_service' => $status !== VehicleRegistry::STATUS_AVAILABLE,
         ];
     }
 }

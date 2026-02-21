@@ -39,6 +39,7 @@ class TripModuleTest extends TestCase
             'max_load_capacity' => 2000,
             'load_unit' => 'kg',
             'odometer' => 10000,
+            'status' => 'available',
             'is_out_of_service' => false,
         ]);
 
@@ -51,7 +52,7 @@ class TripModuleTest extends TestCase
             'total_trips' => 30,
             'completed_trips' => 28,
             'safety_score' => 90,
-            'status' => 'on_duty',
+            'status' => 'available',
         ]);
     }
 
@@ -78,6 +79,8 @@ class TripModuleTest extends TestCase
             'driver_id' => $this->driver->id,
             'status' => 'draft',
         ]);
+        $this->assertDatabaseHas('vehicle_registries', ['id' => $this->vehicle->id, 'status' => 'on_trip']);
+        $this->assertDatabaseHas('drivers', ['id' => $this->driver->id, 'status' => 'on_trip']);
     }
 
     public function test_trip_creation_fails_when_cargo_exceeds_vehicle_capacity(): void
@@ -112,11 +115,15 @@ class TripModuleTest extends TestCase
         ]);
         $dispatched->assertOk()->assertJson(['status' => true]);
         $this->assertDatabaseHas('trips', ['id' => $trip->id, 'status' => 'dispatched']);
+        $this->assertDatabaseHas('vehicle_registries', ['id' => $this->vehicle->id, 'status' => 'on_trip']);
+        $this->assertDatabaseHas('drivers', ['id' => $this->driver->id, 'status' => 'on_trip']);
 
         $completed = $this->actingAs($this->admin)->post(route('trip.status', $trip->id), [
             'status' => 'completed',
         ]);
         $completed->assertOk()->assertJson(['status' => true]);
         $this->assertDatabaseHas('trips', ['id' => $trip->id, 'status' => 'completed']);
+        $this->assertDatabaseHas('vehicle_registries', ['id' => $this->vehicle->id, 'status' => 'available']);
+        $this->assertDatabaseHas('drivers', ['id' => $this->driver->id, 'status' => 'available']);
     }
 }

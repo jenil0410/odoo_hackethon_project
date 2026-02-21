@@ -47,9 +47,11 @@ class DummyDataSeeder extends Seeder
 
     private function seedTrips(Collection $vehicles, Collection $drivers): void
     {
-        $availableVehicles = $vehicles->where('is_out_of_service', false)->values();
+        $availableVehicles = $vehicles
+            ->filter(fn (VehicleRegistry $vehicle) => in_array($vehicle->status, VehicleRegistry::assignableStatuses(), true))
+            ->values();
         $availableDrivers = $drivers
-            ->filter(fn (Driver $driver) => $driver->status === 'on_duty' && ! $driver->is_license_expired)
+            ->filter(fn (Driver $driver) => in_array($driver->status, Driver::assignableStatuses(), true) && ! $driver->is_license_expired)
             ->values();
 
         if ($availableVehicles->isEmpty() || $availableDrivers->isEmpty()) {
@@ -96,6 +98,12 @@ class DummyDataSeeder extends Seeder
                 'estimated_fuel_cost' => fake()->randomFloat(2, 500, 15000),
                 'status' => 'dispatched',
             ]);
+
+            $vehicle->update([
+                'status' => VehicleRegistry::STATUS_ON_TRIP,
+                'is_out_of_service' => true,
+            ]);
+            $driver->update(['status' => Driver::STATUS_ON_TRIP]);
         }
     }
 }

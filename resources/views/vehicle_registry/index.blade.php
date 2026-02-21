@@ -107,11 +107,18 @@
                                 <input type="number" step="0.01" min="0" class="form-control" id="odometer"
                                     name="odometer" required data-parsley-required-message="Odometer is required.">
                             </div>
-                            <div class="col-12">
-                                <div class="form-check form-switch mt-2">
-                                    <input class="form-check-input" type="checkbox" id="is_out_of_service" name="is_out_of_service" value="1">
-                                    <label class="form-check-label" for="is_out_of_service">Out of Service (Retired)</label>
-                                </div>
+                            <div class="col-md-4">
+                                <label for="status" class="form-label">Status</label>
+                                <select class="form-select select2" id="status" name="status" required
+                                    data-parsley-required-message="Status is required."
+                                    data-parsley-errors-container="#status_err">
+                                    <option value="">Select Status</option>
+                                    <option value="available">Available</option>
+                                    <option value="on_trip">On Trip</option>
+                                    <option value="in_shop">In Shop</option>
+                                    <option value="retired">Retired</option>
+                                </select>
+                                <small class="red-text ml-10" id="status_err" role="alert"></small>
                             </div>
                         </div>
                     </div>
@@ -150,11 +157,11 @@
                     { data: 'license_plate', name: 'license_plate' },
                     { data: 'max_load_capacity', name: 'max_load_capacity', searchable: false },
                     { data: 'odometer', name: 'odometer', searchable: false },
-                    { data: 'is_out_of_service', name: 'is_out_of_service', orderable: false, searchable: false }
+                    { data: 'status', name: 'status', orderable: false, searchable: false }
                 ]
             });
 
-            $('#load_unit').on('change', function() {
+            $('#load_unit, #status').on('change', function() {
                 vehicleForm.validate();
             });
 
@@ -188,7 +195,7 @@
                     max_load_capacity: $('#max_load_capacity').val(),
                     load_unit: $('#load_unit').val(),
                     odometer: $('#odometer').val(),
-                    is_out_of_service: $('#is_out_of_service').is(':checked') ? 1 : 0
+                    status: $('#status').val()
                 };
 
                 if (isEditMode) {
@@ -242,7 +249,7 @@
             $('#vehicleRegistryForm')[0].reset();
             $('#vehicle_id').val('');
             $('#load_unit').val('').trigger('change');
-            $('#is_out_of_service').prop('checked', false);
+            $('#status').val('').trigger('change');
             isEditMode = false;
             $('#vehicleModalTitle').text('Add Vehicle');
             $('#saveVehicleBtn').text('Save');
@@ -250,7 +257,7 @@
         }
 
         function clearServerErrors() {
-            ['name_model', 'license_plate', 'max_load_capacity', 'load_unit', 'odometer'].forEach(function(field) {
+            ['name_model', 'license_plate', 'max_load_capacity', 'load_unit', 'odometer', 'status'].forEach(function(field) {
                 const input = $('#' + field);
                 if (input.length && input.parsley()) {
                     input.parsley().removeError('server', {
@@ -281,7 +288,7 @@
                 $('#max_load_capacity').val(row.max_load_capacity);
                 $('#load_unit').val(row.load_unit).trigger('change');
                 $('#odometer').val(row.odometer);
-                $('#is_out_of_service').prop('checked', !!row.is_out_of_service);
+                $('#status').val(row.status).trigger('change');
                 vehicleForm.reset();
                 vehicleModal.show();
             }).fail(function() {

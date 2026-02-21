@@ -46,13 +46,14 @@ class VehicleRegistryModuleTest extends TestCase
             'max_load_capacity' => 18000,
             'load_unit' => 'kg',
             'odometer' => 125000.5,
-            'is_out_of_service' => 0,
+            'status' => 'available',
         ]);
 
         $response->assertOk()->assertJson(['status' => true]);
         $this->assertDatabaseHas('vehicle_registries', [
             'license_plate' => 'GJ01AB1234',
             'name_model' => 'Volvo FH16',
+            'status' => 'available',
         ]);
     }
 
@@ -64,6 +65,7 @@ class VehicleRegistryModuleTest extends TestCase
             'max_load_capacity' => 2.5,
             'load_unit' => 'tons',
             'odometer' => 15000,
+            'status' => 'available',
             'is_out_of_service' => false,
         ]);
 
