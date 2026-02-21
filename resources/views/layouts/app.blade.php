@@ -281,6 +281,11 @@
             color: red;
         }
 
+        /* Global SweetAlert policy: never show deny/no button */
+        .swal2-deny {
+            display: none !important;
+        }
+
         .parsley-required,
         .parsley-type,
         .parsley-errors-list  {
@@ -473,6 +478,50 @@
     <script src="{{ asset('assets/vendor/libs/flatpickr/flatpickr.js') }}"></script>
     <script src="{{ asset('assets/vendor/libs/sweetalert2/sweetalert2.js') }}"></script>
     <script src="{{ asset('assets/vendor/libs/select2/select2.js') }}"></script>
+    <script>
+        // Global SweetAlert policy: never show deny/no button.
+        (function () {
+            if (!window.Swal || typeof window.Swal.fire !== 'function') {
+                return;
+            }
+
+            function normalizeArgs(args) {
+                if (args.length === 1 && typeof args[0] === 'object' && args[0] !== null) {
+                    args[0] = {
+                        ...args[0],
+                        showDenyButton: false
+                    };
+                }
+                return args;
+            }
+
+            const originalFire = window.Swal.fire.bind(window.Swal);
+            window.Swal.fire = function (...args) {
+                return originalFire(...normalizeArgs(args));
+            };
+
+            if (typeof window.Swal.mixin === 'function') {
+                const originalMixin = window.Swal.mixin.bind(window.Swal);
+                window.Swal.mixin = function (...mixinArgs) {
+                    if (mixinArgs.length === 1 && typeof mixinArgs[0] === 'object' && mixinArgs[0] !== null) {
+                        mixinArgs[0] = {
+                            ...mixinArgs[0],
+                            showDenyButton: false
+                        };
+                    }
+
+                    const mixed = originalMixin(...mixinArgs);
+                    if (mixed && typeof mixed.fire === 'function') {
+                        const mixedFire = mixed.fire.bind(mixed);
+                        mixed.fire = function (...args) {
+                            return mixedFire(...normalizeArgs(args));
+                        };
+                    }
+                    return mixed;
+                };
+            }
+        })();
+    </script>
     {{-- <script src="https://code.highcharts.com/highcharts.js"></script> --}}
     {{-- <script
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB1mG52tiHM3duCJupl0CtEB3xpzUGiohQ&callback=initAutocomplete&libraries=places&v=weekly"

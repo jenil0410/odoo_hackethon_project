@@ -17,5 +17,6 @@ return [
         'Activity Log',
         'Vehicle Registry',
         'Driver',
+        'Trip',
     ],
 ];
