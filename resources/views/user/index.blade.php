@@ -254,8 +254,9 @@
                 title: 'Are you sure?',
                 text: "You want to delete " + name + ".",
                 icon: 'warning',
-                confirmButtonText: 'Yes, delete it!',
-                cancelButtonText: 'No, Please!',
+                showCancelButton: true,
+                confirmButtonText: 'OK',
+                cancelButtonText: 'Cancel',
                 customClass: {
                     confirmButton: 'btn btn-primary me-3 waves-effect waves-light',
                     cancelButton: 'btn btn-outline-secondary waves-effect'

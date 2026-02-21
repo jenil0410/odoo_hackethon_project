@@ -15,5 +15,6 @@ return [
         'User',
         'Role',
         'Activity Log',
+        'Vehicle Registry',
     ],
 ];

@@ -5,6 +5,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserPermissionController;
+use App\Http\Controllers\VehicleRegistryController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -31,6 +32,12 @@ Route::middleware('auth')->group(function () {
     Route::get('role/delete/{id}', [RoleController::class, 'destroy'])->name('role.delete');
 
     Route::get('activity-log', [ActivityLogController::class, 'index'])->name('activity-log.index');
+
+    Route::get('vehicle-registry', [VehicleRegistryController::class, 'index'])->name('vehicle-registry.index');
+    Route::post('vehicle-registry', [VehicleRegistryController::class, 'store'])->name('vehicle-registry.store');
+    Route::put('vehicle-registry/{id}', [VehicleRegistryController::class, 'update'])->name('vehicle-registry.update');
+    Route::get('vehicle-registry/fetch/{id}', [VehicleRegistryController::class, 'fetch'])->name('vehicle-registry.fetch');
+    Route::get('vehicle-registry/delete/{id}', [VehicleRegistryController::class, 'destroy'])->name('vehicle-registry.delete');
 });
 
 require __DIR__.'/auth.php';
