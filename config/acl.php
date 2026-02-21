@@ -16,5 +16,6 @@ return [
         'Role',
         'Activity Log',
         'Vehicle Registry',
+        'Driver',
     ],
 ];

@@ -6,6 +6,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserPermissionController;
 use App\Http\Controllers\VehicleRegistryController;
+use App\Http\Controllers\DriverController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -38,6 +39,13 @@ Route::middleware('auth')->group(function () {
     Route::put('vehicle-registry/{id}', [VehicleRegistryController::class, 'update'])->name('vehicle-registry.update');
     Route::get('vehicle-registry/fetch/{id}', [VehicleRegistryController::class, 'fetch'])->name('vehicle-registry.fetch');
     Route::get('vehicle-registry/delete/{id}', [VehicleRegistryController::class, 'destroy'])->name('vehicle-registry.delete');
+
+    Route::get('driver', [DriverController::class, 'index'])->name('driver.index');
+    Route::post('driver', [DriverController::class, 'store'])->name('driver.store');
+    Route::put('driver/{id}', [DriverController::class, 'update'])->name('driver.update');
+    Route::get('driver/fetch/{id}', [DriverController::class, 'fetch'])->name('driver.fetch');
+    Route::get('driver/delete/{id}', [DriverController::class, 'destroy'])->name('driver.delete');
+    Route::get('driver/{id}/can-assign', [DriverController::class, 'canAssign'])->name('driver.can-assign');
 });
 
 require __DIR__.'/auth.php';
