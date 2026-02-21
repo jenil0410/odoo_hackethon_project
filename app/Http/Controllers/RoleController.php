@@ -14,6 +14,11 @@ class RoleController extends Controller
     {
         if ($request->ajax()) {
             $query = Role::query()->latest();
+
+            if ($request->filled('guard_name_filter')) {
+                $query->where('guard_name', $request->guard_name_filter);
+            }
+
             $search = trim((string) data_get($request->input('search'), 'value', ''));
             $draw = (int) $request->input('draw', 1);
             $start = max(0, (int) $request->input('start', 0));
@@ -50,7 +55,13 @@ class RoleController extends Controller
             ]);
         }
 
-        return view('role.index');
+        $guards = Role::query()
+            ->select('guard_name')
+            ->distinct()
+            ->orderBy('guard_name')
+            ->pluck('guard_name');
+
+        return view('role.index', compact('guards'));
     }
 
     public function create()

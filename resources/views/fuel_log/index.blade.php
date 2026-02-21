@@ -26,6 +26,19 @@
             padding: 0 !important;
         }
 
+        .filter-card {
+            background-color: #F4F7F6 !important;
+            border: 1px solid #E0E6E4;
+        }
+
+        .filter-card .form-control,
+        .filter-card .form-select,
+        .filter-card .select2-selection {
+            border-color: #E0E6E4 !important;
+            color: #1F2933 !important;
+            background-color: #fff !important;
+        }
+
         .dt-button-collection {
             min-width: 223px !important;
             background-color: #fff !important;
@@ -73,6 +86,34 @@
 @endsection
 
 @section('content')
+    <div class="card mb-3 filter-card">
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-5">
+                    <label class="form-label" for="fuel_vehicle_filter">Vehicle</label>
+                    <select class="form-select select2" id="fuel_vehicle_filter">
+                        <option value="">All Vehicles</option>
+                        @foreach ($vehicles as $vehicle)
+                            <option value="{{ $vehicle->id }}">{{ $vehicle->name_model }} ({{ $vehicle->license_plate }})</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label" for="trip_link_filter">Trip Link</label>
+                    <select class="form-select select2" id="trip_link_filter">
+                        <option value="">All</option>
+                        <option value="with_trip">With Trip</option>
+                        <option value="without_trip">Without Trip</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button class="btn btn-primary" type="button" id="applyFuelFilters">Filter</button>
+                    <button class="btn btn-outline-secondary" type="button" id="resetFuelFilters">Reset</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="card">
         <div class="card-header d-flex align-items-center justify-content-between py-2 module-card-header">
             <h5 class="card-title m-0 me-2">Completed Trip, Expense & Fuel Logging</h5>
@@ -198,7 +239,13 @@
                 serverSide: true,
                 dom: '<"flex-column flex-md-row"<"head-label text-center"><"dt-action-buttons text-end pt-3 pt-md-0"B>><"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6 d-flex justify-content-center justify-content-md-end"f>>t<"row"<"col-sm-12 col-md-6"i><"col-sm-12 col-md-6"p>>',
                 buttons: moduleTableButtons,
-                ajax: "{{ route('fuel-log.index') }}",
+                ajax: {
+                    url: "{{ route('fuel-log.index') }}",
+                    data: function(d) {
+                        d.vehicle_filter = $('#fuel_vehicle_filter').val();
+                        d.trip_link_filter = $('#trip_link_filter').val();
+                    }
+                },
                 columns: [
                     { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
                     { data: 'action', name: 'action', orderable: false, searchable: false },
@@ -208,6 +255,16 @@
                     { data: 'liters', name: 'liters', searchable: false },
                     { data: 'cost', name: 'cost', searchable: false }
                 ]
+            });
+
+            $('#applyFuelFilters').on('click', function() {
+                fuelTable.ajax.reload();
+            });
+
+            $('#resetFuelFilters').on('click', function() {
+                $('#fuel_vehicle_filter').val('').trigger('change');
+                $('#trip_link_filter').val('').trigger('change');
+                fuelTable.ajax.reload();
             });
 
             $('#openCreateFuelModal').on('click', openFuelCreateModal);
@@ -297,4 +354,3 @@
         }
     </script>
 @endsection
-

@@ -45,6 +45,19 @@
             padding: 0 !important;
         }
 
+        .filter-card {
+            background-color: #F4F7F6 !important;
+            border: 1px solid #E0E6E4;
+        }
+
+        .filter-card .form-control,
+        .filter-card .form-select,
+        .filter-card .select2-selection {
+            border-color: #E0E6E4 !important;
+            color: #1F2933 !important;
+            background-color: #fff !important;
+        }
+
         #user_table.dataTable thead th {
             background-color: #1F7A4C !important;
             color: #fff !important;
@@ -126,6 +139,35 @@
     </style>
 @endsection
 @section('content')
+    <div class="card mb-3 filter-card">
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label" for="role_id_filter">Role</label>
+                    <select class="form-select select2" id="role_id_filter">
+                        <option value="">All Roles</option>
+                        @foreach ($roles as $role)
+                            <option value="{{ $role->id }}">{{ $role->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label" for="gender_filter">Gender</label>
+                    <select class="form-select select2" id="gender_filter">
+                        <option value="">All Genders</option>
+                        @foreach ($genders as $gender)
+                            <option value="{{ $gender }}">{{ ucfirst($gender) }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex gap-2">
+                    <button class="btn btn-primary" type="button" id="applyUserFilters">Filter</button>
+                    <button class="btn btn-outline-secondary" type="button" id="resetUserFilters">Reset</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="card">
         <div class="card-header d-flex align-items-center justify-content-between py-2 module-card-header">
             <h5 class="card-title m-0 me-2">User</h5>
@@ -162,6 +204,7 @@
 @section('scripts')
     <script type="text/javascript">
         $(document).ready(function() {
+            let dataTable;
             const moduleTableButtons = [{
                     extend: 'colvis',
                     collectionLayout: 'fixed one-column',
@@ -195,7 +238,7 @@
             $("#overlay").show();
 
             function fill_datatable(name = '', id = '', created_at = '') {
-                var dataTable = $('#user_table').DataTable({
+                dataTable = $('#user_table').DataTable({
                     searching: true,
                     processing: true,
                     serverSide: true,
@@ -205,6 +248,10 @@
                     buttons: moduleTableButtons,
                     ajax: {
                         url: "{{ route('user.index') }}",
+                        data: function(d) {
+                            d.role_id_filter = $('#role_id_filter').val();
+                            d.gender_filter = $('#gender_filter').val();
+                        }
                     },
                     columns: [{
                             data: 'id'
@@ -316,6 +363,16 @@
                 });
             }
 
+            $('#applyUserFilters').on('click', function() {
+                dataTable.ajax.reload();
+            });
+
+            $('#resetUserFilters').on('click', function() {
+                $('#role_id_filter').val('').trigger('change');
+                $('#gender_filter').val('').trigger('change');
+                dataTable.ajax.reload();
+            });
+
             setTimeout(function() {
                 $('.alert').fadeOut('fast');
             }, 3000);
@@ -386,4 +443,3 @@
         }
     </script>
 @endsection
-

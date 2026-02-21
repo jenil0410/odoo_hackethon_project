@@ -25,6 +25,18 @@ class TripController extends Controller
                 ->with(['vehicle:id,name_model,license_plate', 'driver:id,full_name,license_number'])
                 ->latest();
 
+            if ($request->filled('status_filter')) {
+                $query->where('status', $request->status_filter);
+            }
+
+            if ($request->filled('vehicle_filter')) {
+                $query->where('vehicle_registry_id', $request->vehicle_filter);
+            }
+
+            if ($request->filled('driver_filter')) {
+                $query->where('driver_id', $request->driver_filter);
+            }
+
             $search = trim((string) data_get($request->input('search'), 'value', ''));
             $draw = (int) $request->input('draw', 1);
             $start = max(0, (int) $request->input('start', 0));
@@ -105,6 +117,8 @@ class TripController extends Controller
             'createCheck' => $createCheck,
             'vehicles' => $this->availableVehicles(),
             'drivers' => $this->availableDrivers(),
+            'filterVehicles' => VehicleRegistry::query()->orderBy('name_model')->get(['id', 'name_model', 'license_plate']),
+            'filterDrivers' => Driver::query()->orderBy('full_name')->get(['id', 'full_name', 'license_number']),
         ]);
     }
 

@@ -24,6 +24,19 @@ class FuelLogController extends Controller
                 ->with(['vehicle:id,name_model,license_plate', 'trip:id,status'])
                 ->latest();
 
+            if ($request->filled('vehicle_filter')) {
+                $query->where('vehicle_registry_id', $request->vehicle_filter);
+            }
+
+            if ($request->filled('trip_link_filter')) {
+                if ($request->trip_link_filter === 'with_trip') {
+                    $query->whereNotNull('trip_id');
+                }
+                if ($request->trip_link_filter === 'without_trip') {
+                    $query->whereNull('trip_id');
+                }
+            }
+
             $search = trim((string) data_get($request->input('search'), 'value', ''));
             $draw = (int) $request->input('draw', 1);
             $start = max(0, (int) $request->input('start', 0));

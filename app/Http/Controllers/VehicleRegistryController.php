@@ -20,6 +20,22 @@ class VehicleRegistryController extends Controller
 
         if ($request->ajax()) {
             $query = VehicleRegistry::query()->latest();
+
+            if ($request->filled('status_filter')) {
+                $status = (string) $request->status_filter;
+                if ($status === 'out_of_service') {
+                    $query->where('is_out_of_service', true);
+                } elseif ($status === 'in_shop') {
+                    $query->where('is_out_of_service', false)->where('is_in_shop', true);
+                } elseif ($status === 'available') {
+                    $query->where('is_out_of_service', false)->where('is_in_shop', false);
+                }
+            }
+
+            if ($request->filled('load_unit_filter')) {
+                $query->where('load_unit', $request->load_unit_filter);
+            }
+
             $search = trim((string) data_get($request->input('search'), 'value', ''));
             $draw = (int) $request->input('draw', 1);
             $start = max(0, (int) $request->input('start', 0));
@@ -82,7 +98,9 @@ class VehicleRegistryController extends Controller
             ]);
         }
 
-        return view('vehicle_registry.index', compact('createCheck'));
+        $loadUnits = ['kg', 'tons'];
+
+        return view('vehicle_registry.index', compact('createCheck', 'loadUnits'));
     }
 
     public function fetch(string $id)
