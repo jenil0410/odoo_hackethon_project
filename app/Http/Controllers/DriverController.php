@@ -85,6 +85,7 @@ class DriverController extends Controller
                     'compliance' => $complianceBadge,
                     'trip_completion_rate' => number_format($row->trip_completion_rate, 2).'%',
                     'safety_score' => number_format((float) $row->safety_score, 2),
+                    'monthly_salary' => number_format((float) $row->monthly_salary, 2),
                 ];
             })->all();
 
@@ -122,6 +123,7 @@ class DriverController extends Controller
             'total_trips' => ['required', 'integer', 'min:0'],
             'completed_trips' => ['required', 'integer', 'min:0', 'lte:total_trips'],
             'safety_score' => ['required', 'numeric', 'min:0', 'max:100'],
+            'monthly_salary' => ['nullable', 'numeric', 'min:0'],
             'status' => ['required', Rule::in(['on_duty', 'off_duty', 'suspended'])],
         ]);
 
@@ -141,6 +143,7 @@ class DriverController extends Controller
             'total_trips',
             'completed_trips',
             'safety_score',
+            'monthly_salary',
             'status',
         ]));
 
@@ -163,6 +166,7 @@ class DriverController extends Controller
             'total_trips' => ['required', 'integer', 'min:0'],
             'completed_trips' => ['required', 'integer', 'min:0', 'lte:total_trips'],
             'safety_score' => ['required', 'numeric', 'min:0', 'max:100'],
+            'monthly_salary' => ['nullable', 'numeric', 'min:0'],
             'status' => ['required', Rule::in(['on_duty', 'off_duty', 'suspended'])],
         ]);
 
@@ -182,6 +186,7 @@ class DriverController extends Controller
             'total_trips',
             'completed_trips',
             'safety_score',
+            'monthly_salary',
             'status',
         ]));
 

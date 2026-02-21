@@ -217,6 +217,60 @@
             background-color: rgba(47, 174, 122, 0.12) !important;
         }
 
+        .dt-buttons .buttons-colvis {
+            background-color: rgba(47, 174, 122, 0.12) !important;
+            color: var(--brand-primary) !important;
+            border: 1px solid var(--brand-border) !important;
+            border-radius: 6px !important;
+        }
+
+        .dt-button-collection {
+            min-width: 220px;
+            max-width: min(320px, calc(100vw - 24px));
+            border: 1px solid var(--brand-border);
+            box-shadow: 0 8px 18px rgba(31, 41, 51, 0.15);
+            border-radius: 10px;
+            background: #fff;
+            padding: 8px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .dt-button-collection .dt-button {
+            box-shadow: none !important;
+            text-shadow: none !important;
+        }
+
+        .dt-button-collection .dt-button.buttons-columnVisibility {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 10px 14px !important;
+            margin: 0 !important;
+            border: 0 !important;
+            border-radius: 0 !important;
+            background: #fff !important;
+            color: var(--brand-text) !important;
+            font-size: 14px;
+            font-weight: 500;
+            white-space: normal;
+        }
+
+        .dt-button-collection .dt-button.buttons-columnVisibility+.dt-button.buttons-columnVisibility {
+            border-top: 1px solid var(--brand-border) !important;
+        }
+
+        .dt-button-collection .dt-button.buttons-columnVisibility:hover {
+            background-color: rgba(47, 174, 122, 0.12) !important;
+            color: var(--brand-text) !important;
+        }
+
+        .dt-button-collection .dt-button.buttons-columnVisibility.active {
+            background-color: rgba(47, 174, 122, 0.12) !important;
+            color: var(--brand-text) !important;
+            font-weight: 600;
+        }
+
         .module-card-header .card-title {
             color: #fff !important;
             background: transparent !important;
@@ -475,10 +529,101 @@
     <script src="{{ asset('assets/js/form-layouts.js') }}"></script>
 
     <script src="{{ asset('assets/vendor/libs/datatables-bs5/datatables-bootstrap5.js') }}"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.colVis.min.js"></script>
     <script src="{{ asset('assets/vendor/libs/flatpickr/flatpickr.js') }}"></script>
     <script src="{{ asset('assets/vendor/libs/sweetalert2/sweetalert2.js') }}"></script>
     <script src="{{ asset('assets/vendor/libs/select2/select2.js') }}"></script>
     <script>
+        window.getStandardDatatableButtons = function(title, options = {}) {
+            const buttons = [];
+            const colvisColumns = options.colvisColumns || function (idx, data, node) {
+                const headerText = String($(node).text() || '').trim().toLowerCase();
+                if (headerText === '' || headerText === '#' || headerText === 'action') {
+                    return false;
+                }
+                return true;
+            };
+
+            if ($.fn.dataTable?.ext?.buttons?.colvis) {
+                buttons.push({
+                    extend: 'colvis',
+                    collectionLayout: 'fixed one-column',
+                    columns: colvisColumns,
+                    text: '<i class="mdi mdi-eye me-1"></i> Select Columns',
+                    className: 'btn btn-label-secondary'
+                });
+            }
+
+            buttons.push({
+                extend: 'collection',
+                className: 'btn btn-label-primary dropdown-toggle me-2',
+                text: '<i class="mdi mdi-export-variant me-sm-1"></i> <span class="d-none d-sm-inline-block">Export</span>',
+                buttons: [
+                    {
+                        extend: 'print',
+                        text: '<i class="mdi mdi-printer-outline me-1"></i>Print',
+                        title: title,
+                        className: 'dropdown-item',
+                        exportOptions: {
+                            columns: function (idx, data, node) {
+                                return $(node).is(':visible');
+                            }
+                        }
+                    },
+                    {
+                        extend: 'csv',
+                        text: '<i class="mdi mdi-file-delimited-outline me-1"></i>Csv',
+                        title: title,
+                        className: 'dropdown-item',
+                        bom: true,
+                        exportOptions: {
+                            columns: function (idx, data, node) {
+                                return $(node).is(':visible');
+                            }
+                        }
+                    },
+                    {
+                        extend: 'excel',
+                        text: '<i class="mdi mdi-file-excel-outline me-1"></i>Excel',
+                        title: title,
+                        className: 'dropdown-item',
+                        bom: true,
+                        exportOptions: {
+                            columns: function (idx, data, node) {
+                                return $(node).is(':visible');
+                            }
+                        }
+                    },
+                    {
+                        extend: 'pdf',
+                        text: '<i class="mdi mdi-file-pdf-box me-1"></i>Pdf',
+                        title: title,
+                        className: 'dropdown-item',
+                        orientation: 'landscape',
+                        pageSize: 'A4',
+                        exportOptions: {
+                            columns: function (idx, data, node) {
+                                return $(node).is(':visible');
+                            }
+                        }
+                    },
+                    {
+                        extend: 'copy',
+                        text: '<i class="mdi mdi-content-copy me-1"></i>Copy',
+                        title: title,
+                        className: 'dropdown-item',
+                        exportOptions: {
+                            columns: function (idx, data, node) {
+                                return $(node).is(':visible');
+                            }
+                        }
+                    }
+                ]
+            });
+
+            return buttons;
+        };
+
         // Global SweetAlert policy: never show deny/no button.
         (function () {
             if (!window.Swal || typeof window.Swal.fire !== 'function') {

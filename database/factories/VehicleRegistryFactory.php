@@ -27,11 +27,13 @@ class VehicleRegistryFactory extends Factory
                 'Eicher Pro 3015',
                 'BharatBenz 2823',
             ]).' '.fake()->bothify('##'),
-            'license_plate' => strtoupper(fake()->bothify('??##??####')),
+            'license_plate' => strtoupper(fake()->unique()->bothify('??##??####')),
             'max_load_capacity' => $capacity,
             'load_unit' => $unit,
             'odometer' => fake()->randomFloat(2, 1000, 500000),
-            'is_out_of_service' => fake()->boolean(15),
+            'is_out_of_service' => fake()->boolean(10),
+            'is_in_shop' => false,
+            'acquisition_cost' => fake()->randomFloat(2, 150000, 4500000),
         ];
     }
 }

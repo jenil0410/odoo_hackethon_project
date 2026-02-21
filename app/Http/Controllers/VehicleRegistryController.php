@@ -33,7 +33,8 @@ class VehicleRegistryController extends Controller
                         ->orWhere('license_plate', 'like', "%{$search}%")
                         ->orWhere('load_unit', 'like', "%{$search}%")
                         ->orWhere('max_load_capacity', 'like', "%{$search}%")
-                        ->orWhere('odometer', 'like', "%{$search}%");
+                        ->orWhere('odometer', 'like', "%{$search}%")
+                        ->orWhere('acquisition_cost', 'like', "%{$search}%");
                 });
             }
 
@@ -64,9 +65,12 @@ class VehicleRegistryController extends Controller
                     'license_plate' => $row->license_plate,
                     'max_load_capacity' => rtrim(rtrim((string) $row->max_load_capacity, '0'), '.').' '.$row->load_unit,
                     'odometer' => number_format((float) $row->odometer, 2),
+                    'acquisition_cost' => number_format((float) $row->acquisition_cost, 2),
                     'is_out_of_service' => $row->is_out_of_service
                         ? '<span class="badge bg-label-danger">Out of Service</span>'
-                        : '<span class="badge bg-label-success">Active</span>',
+                        : ($row->is_in_shop
+                            ? '<span class="badge bg-label-warning">In Shop</span>'
+                            : '<span class="badge bg-label-success">Available</span>'),
                 ];
             })->all();
 
@@ -99,6 +103,7 @@ class VehicleRegistryController extends Controller
             'max_load_capacity' => ['required', 'numeric', 'min:0'],
             'load_unit' => ['required', Rule::in(['kg', 'tons'])],
             'odometer' => ['required', 'numeric', 'min:0'],
+            'acquisition_cost' => ['nullable', 'numeric', 'min:0'],
             'is_out_of_service' => ['nullable', 'boolean'],
         ]);
 
@@ -115,6 +120,7 @@ class VehicleRegistryController extends Controller
             'max_load_capacity' => $request->max_load_capacity,
             'load_unit' => $request->load_unit,
             'odometer' => $request->odometer,
+            'acquisition_cost' => $request->input('acquisition_cost', 0),
             'is_out_of_service' => (bool) $request->boolean('is_out_of_service'),
         ]);
 
@@ -134,6 +140,7 @@ class VehicleRegistryController extends Controller
             'max_load_capacity' => ['required', 'numeric', 'min:0'],
             'load_unit' => ['required', Rule::in(['kg', 'tons'])],
             'odometer' => ['required', 'numeric', 'min:0'],
+            'acquisition_cost' => ['nullable', 'numeric', 'min:0'],
             'is_out_of_service' => ['nullable', 'boolean'],
         ]);
 
@@ -150,6 +157,7 @@ class VehicleRegistryController extends Controller
             'max_load_capacity' => $request->max_load_capacity,
             'load_unit' => $request->load_unit,
             'odometer' => $request->odometer,
+            'acquisition_cost' => $request->input('acquisition_cost', 0),
             'is_out_of_service' => (bool) $request->boolean('is_out_of_service'),
         ]);
 

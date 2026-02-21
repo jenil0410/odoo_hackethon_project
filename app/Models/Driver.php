@@ -20,6 +20,7 @@ class Driver extends Model
         'total_trips',
         'completed_trips',
         'safety_score',
+        'monthly_salary',
         'status',
     ];
 
@@ -28,6 +29,7 @@ class Driver extends Model
         'total_trips' => 'integer',
         'completed_trips' => 'integer',
         'safety_score' => 'decimal:2',
+        'monthly_salary' => 'decimal:2',
     ];
 
     public function getTripCompletionRateAttribute(): float

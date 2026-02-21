@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\FuelLogController;
+use App\Http\Controllers\MaintenanceLogController;
+use App\Http\Controllers\OperationalAnalyticsController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
@@ -54,6 +57,25 @@ Route::middleware('auth')->group(function () {
     Route::post('trip/{id}/status', [TripController::class, 'changeStatus'])->name('trip.status');
     Route::get('trip/fetch/{id}', [TripController::class, 'fetch'])->name('trip.fetch');
     Route::get('trip/delete/{id}', [TripController::class, 'destroy'])->name('trip.delete');
+
+    Route::get('maintenance-log', [MaintenanceLogController::class, 'index'])->name('maintenance-log.index');
+    Route::post('maintenance-log', [MaintenanceLogController::class, 'store'])->name('maintenance-log.store');
+    Route::put('maintenance-log/{id}', [MaintenanceLogController::class, 'update'])->name('maintenance-log.update');
+    Route::post('maintenance-log/{id}/complete', [MaintenanceLogController::class, 'markCompleted'])->name('maintenance-log.complete');
+    Route::get('maintenance-log/fetch/{id}', [MaintenanceLogController::class, 'fetch'])->name('maintenance-log.fetch');
+    Route::get('maintenance-log/delete/{id}', [MaintenanceLogController::class, 'destroy'])->name('maintenance-log.delete');
+
+    Route::get('fuel-log', [FuelLogController::class, 'index'])->name('fuel-log.index');
+    Route::post('fuel-log', [FuelLogController::class, 'store'])->name('fuel-log.store');
+    Route::put('fuel-log/{id}', [FuelLogController::class, 'update'])->name('fuel-log.update');
+    Route::get('fuel-log/fetch/{id}', [FuelLogController::class, 'fetch'])->name('fuel-log.fetch');
+    Route::get('fuel-log/delete/{id}', [FuelLogController::class, 'destroy'])->name('fuel-log.delete');
+
+    Route::get('analytics', [OperationalAnalyticsController::class, 'index'])->name('analytics.index');
+    Route::get('analytics/export/payroll/csv', [OperationalAnalyticsController::class, 'exportPayrollCsv'])->name('analytics.export.payroll.csv');
+    Route::get('analytics/export/payroll/pdf', [OperationalAnalyticsController::class, 'exportPayrollPdf'])->name('analytics.export.payroll.pdf');
+    Route::get('analytics/export/health/csv', [OperationalAnalyticsController::class, 'exportHealthCsv'])->name('analytics.export.health.csv');
+    Route::get('analytics/export/health/pdf', [OperationalAnalyticsController::class, 'exportHealthPdf'])->name('analytics.export.health.pdf');
 });
 
 require __DIR__.'/auth.php';

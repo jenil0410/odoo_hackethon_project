@@ -115,8 +115,10 @@ class TripModuleTest extends TestCase
 
         $completed = $this->actingAs($this->admin)->post(route('trip.status', $trip->id), [
             'status' => 'completed',
+            'final_odometer' => 10500,
+            'revenue_amount' => 15000,
         ]);
         $completed->assertOk()->assertJson(['status' => true]);
-        $this->assertDatabaseHas('trips', ['id' => $trip->id, 'status' => 'completed']);
+        $this->assertDatabaseHas('trips', ['id' => $trip->id, 'status' => 'completed', 'final_odometer' => 10500.00]);
     }
 }

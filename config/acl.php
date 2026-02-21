@@ -18,5 +18,8 @@ return [
         'Vehicle Registry',
         'Driver',
         'Trip',
+        'Maintenance Log',
+        'Fuel Log',
+        'Operational Analytics',
     ],
 ];
