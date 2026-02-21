@@ -111,7 +111,7 @@ class TripController extends Controller
     public function fetch(string $id)
     {
         $trip = Trip::with([
-            'vehicle:id,name_model,license_plate,max_load_capacity,load_unit,is_out_of_service',
+            'vehicle:id,name_model,license_plate,max_load_capacity,load_unit,is_out_of_service,is_in_shop,odometer',
             'driver:id,full_name,license_number,status,license_expiry_date',
         ])
             ->findOrFail($id);
@@ -224,6 +224,8 @@ class TripController extends Controller
         $trip = Trip::findOrFail($id);
         $validator = Validator::make($request->all(), [
             'status' => ['required', Rule::in(['draft', 'dispatched', 'completed', 'cancelled'])],
+            'final_odometer' => ['nullable', 'numeric', 'min:0'],
+            'revenue_amount' => ['nullable', 'numeric', 'min:0'],
         ]);
 
         if ($validator->fails()) {
@@ -231,11 +233,27 @@ class TripController extends Controller
         }
 
         $nextStatus = (string) $request->status;
+        $currentStatus = (string) $trip->status;
+
         if ($nextStatus === (string) $trip->status) {
             return response()->json([
                 'status' => true,
                 'message' => 'Trip status is already '.ucfirst($nextStatus).'.',
             ]);
+        }
+
+        $allowedTransitions = [
+            'draft' => ['dispatched', 'cancelled'],
+            'dispatched' => ['completed', 'cancelled'],
+            'completed' => [],
+            'cancelled' => [],
+        ];
+
+        if (! in_array($nextStatus, $allowedTransitions[$currentStatus] ?? [], true)) {
+            return response()->json([
+                'status' => false,
+                'errors' => ['status' => ['Invalid status transition.']],
+            ], 422);
         }
 
         if ($nextStatus === 'dispatched') {
@@ -245,6 +263,52 @@ class TripController extends Controller
             if ($businessErrors !== []) {
                 return response()->json(['status' => false, 'errors' => $businessErrors], 422);
             }
+
+            $trip->update(['status' => $nextStatus]);
+            $driver->increment('total_trips');
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Trip status updated to '.ucfirst($nextStatus).'.',
+            ]);
+        }
+
+        if ($nextStatus === 'completed') {
+            $vehicle = VehicleRegistry::findOrFail($trip->vehicle_registry_id);
+            $driver = Driver::findOrFail($trip->driver_id);
+
+            $finalOdometer = $request->input('final_odometer');
+            if ($finalOdometer === null || $finalOdometer === '') {
+                return response()->json([
+                    'status' => false,
+                    'errors' => ['final_odometer' => ['Final odometer is required to complete a trip.']],
+                ], 422);
+            }
+
+            $finalOdometerValue = (float) $finalOdometer;
+            $currentVehicleOdometer = (float) $vehicle->odometer;
+            if ($finalOdometerValue < $currentVehicleOdometer) {
+                return response()->json([
+                    'status' => false,
+                    'errors' => ['final_odometer' => ['Final odometer cannot be less than current vehicle odometer.']],
+                ], 422);
+            }
+
+            $distance = $finalOdometerValue - $currentVehicleOdometer;
+            $trip->update([
+                'status' => 'completed',
+                'completed_at' => now(),
+                'final_odometer' => $finalOdometerValue,
+                'actual_distance_km' => $distance,
+                'revenue_amount' => (float) $request->input('revenue_amount', 0),
+            ]);
+            $vehicle->update(['odometer' => $finalOdometerValue]);
+            $driver->increment('completed_trips');
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Trip status updated to Completed.',
+            ]);
         }
 
         $trip->update(['status' => $nextStatus]);
@@ -284,6 +348,10 @@ class TripController extends Controller
             $errors['vehicle_registry_id'] = ['Selected vehicle is out of service.'];
         }
 
+        if ($vehicle->is_in_shop) {
+            $errors['vehicle_registry_id'] = ['Selected vehicle is currently in shop.'];
+        }
+
         $dispatchedVehicleTrip = Trip::query()
             ->where('status', 'dispatched')
             ->where('vehicle_registry_id', $vehicle->id)
@@ -321,6 +389,7 @@ class TripController extends Controller
 
         return VehicleRegistry::query()
             ->where('is_out_of_service', false)
+            ->where('is_in_shop', false)
             ->whereNotIn('id', $busyVehicleIds)
             ->orderBy('name_model')
             ->get(['id', 'name_model', 'license_plate', 'max_load_capacity', 'load_unit']);

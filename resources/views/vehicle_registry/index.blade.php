@@ -31,6 +31,50 @@
             border-radius: 14px;
             border: 0;
         }
+
+        .dt-button-collection {
+            min-width: 223px !important;
+            background-color: #fff !important;
+            border: 1px solid #ddd !important;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2) !important;
+            padding: 10px !important;
+        }
+
+        .dt-button-collection .dt-button.buttons-columnVisibility {
+            display: block !important;
+            width: 100% !important;
+            text-align: left !important;
+            padding: 6px 10px !important;
+            margin: 0 !important;
+            border: 0 !important;
+            border-radius: 0 !important;
+            background: #fff !important;
+            color: #1F2933 !important;
+        }
+
+        .dt-button-collection .dt-button.buttons-columnVisibility:hover,
+        .dt-button-collection .dt-button.buttons-columnVisibility.active {
+            background-color: rgba(47, 174, 122, 0.12) !important;
+            color: #1F2933 !important;
+        }
+    
+        /* Datatable dropdown positioning per reference */
+        .dt-button-collection {
+            position: absolute !important;
+            top: auto !important;
+            left: auto !important;
+            right: 163px !important;
+            z-index: 1050 !important;
+        }
+
+        .dt-button-collection.dtb-b2 {
+            position: absolute !important;
+            top: auto !important;
+            left: auto !important;
+            right: 6px !important;
+            z-index: 1050 !important;
+            min-width: 150px !important;
+        }
     </style>
 @endsection
 
@@ -46,8 +90,8 @@
         </div>
 
         <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-striped" id="vehicle_registry_table">
+            <div class="card-datatable table-responsive pt-0">
+                <table class="datatables-basic table table-striped" id="vehicle_registry_table">
                     <thead>
                         <tr>
                             <th>#</th>
@@ -56,6 +100,7 @@
                             <th>License Plate</th>
                             <th>Max Load Capacity</th>
                             <th>Odometer</th>
+                            <th>Acquisition Cost</th>
                             <th>Status</th>
                         </tr>
                     </thead>
@@ -107,6 +152,11 @@
                                 <input type="number" step="0.01" min="0" class="form-control" id="odometer"
                                     name="odometer" required data-parsley-required-message="Odometer is required.">
                             </div>
+                            <div class="col-md-4">
+                                <label for="acquisition_cost" class="form-label">Acquisition Cost</label>
+                                <input type="number" step="0.01" min="0" class="form-control" id="acquisition_cost"
+                                    name="acquisition_cost">
+                            </div>
                             <div class="col-12">
                                 <div class="form-check form-switch mt-2">
                                     <input class="form-check-input" type="checkbox" id="is_out_of_service" name="is_out_of_service" value="1">
@@ -134,6 +184,32 @@
         let isEditMode = false;
 
         $(function() {
+            const moduleTableButtons = [{
+                extend: 'colvis',
+                collectionLayout: 'fixed one-column',
+                columns: function(idx, data, node) {
+                    const headerText = String($(node).text() || '').trim().toLowerCase();
+                    return headerText !== '' && headerText !== '#' && headerText !== 'action';
+                },
+                text: '<i class="mdi mdi-eye me-1"></i> Select Columns',
+                className: 'btn btn-label-secondary'
+            }, {
+                extend: 'collection',
+                className: 'btn btn-label-primary dropdown-toggle me-2',
+                text: '<i class="mdi mdi-export-variant me-sm-1"></i> <span class="d-none d-sm-inline-block">Export</span>',
+                buttons: ['print', 'csv', 'excel', 'pdf', 'copy'].map(function(type) {
+                    return {
+                        extend: type,
+                        className: 'dropdown-item',
+                        exportOptions: {
+                            columns: function(idx, data, node) {
+                                return $(node).is(':visible');
+                            }
+                        }
+                    };
+                })
+            }];
+
             vehicleModal = new bootstrap.Modal(document.getElementById('vehicleRegistryModal'));
             vehicleForm = $('#vehicleRegistryForm').parsley({
                 excluded: 'input[type=button], input[type=submit], input[type=reset], [disabled]'
@@ -142,6 +218,8 @@
             vehicleTable = $('#vehicle_registry_table').DataTable({
                 processing: true,
                 serverSide: true,
+                dom: '<"flex-column flex-md-row"<"head-label text-center"><"dt-action-buttons text-end pt-3 pt-md-0"B>><"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6 d-flex justify-content-center justify-content-md-end"f>>t<"row"<"col-sm-12 col-md-6"i><"col-sm-12 col-md-6"p>>',
+                buttons: moduleTableButtons,
                 ajax: "{{ route('vehicle-registry.index') }}",
                 columns: [
                     { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
@@ -150,6 +228,7 @@
                     { data: 'license_plate', name: 'license_plate' },
                     { data: 'max_load_capacity', name: 'max_load_capacity', searchable: false },
                     { data: 'odometer', name: 'odometer', searchable: false },
+                    { data: 'acquisition_cost', name: 'acquisition_cost', searchable: false },
                     { data: 'is_out_of_service', name: 'is_out_of_service', orderable: false, searchable: false }
                 ]
             });
@@ -188,6 +267,7 @@
                     max_load_capacity: $('#max_load_capacity').val(),
                     load_unit: $('#load_unit').val(),
                     odometer: $('#odometer').val(),
+                    acquisition_cost: $('#acquisition_cost').val(),
                     is_out_of_service: $('#is_out_of_service').is(':checked') ? 1 : 0
                 };
 
@@ -243,6 +323,7 @@
             $('#vehicle_id').val('');
             $('#load_unit').val('').trigger('change');
             $('#is_out_of_service').prop('checked', false);
+            $('#acquisition_cost').val('');
             isEditMode = false;
             $('#vehicleModalTitle').text('Add Vehicle');
             $('#saveVehicleBtn').text('Save');
@@ -250,7 +331,7 @@
         }
 
         function clearServerErrors() {
-            ['name_model', 'license_plate', 'max_load_capacity', 'load_unit', 'odometer'].forEach(function(field) {
+            ['name_model', 'license_plate', 'max_load_capacity', 'load_unit', 'odometer', 'acquisition_cost'].forEach(function(field) {
                 const input = $('#' + field);
                 if (input.length && input.parsley()) {
                     input.parsley().removeError('server', {
@@ -281,6 +362,7 @@
                 $('#max_load_capacity').val(row.max_load_capacity);
                 $('#load_unit').val(row.load_unit).trigger('change');
                 $('#odometer').val(row.odometer);
+                $('#acquisition_cost').val(row.acquisition_cost);
                 $('#is_out_of_service').prop('checked', !!row.is_out_of_service);
                 vehicleForm.reset();
                 vehicleModal.show();
@@ -316,3 +398,4 @@
         }
     </script>
 @endsection
+

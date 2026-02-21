@@ -31,6 +31,50 @@
             border-radius: 14px;
             border: 0;
         }
+
+        .dt-button-collection {
+            min-width: 223px !important;
+            background-color: #fff !important;
+            border: 1px solid #ddd !important;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2) !important;
+            padding: 10px !important;
+        }
+
+        .dt-button-collection .dt-button.buttons-columnVisibility {
+            display: block !important;
+            width: 100% !important;
+            text-align: left !important;
+            padding: 6px 10px !important;
+            margin: 0 !important;
+            border: 0 !important;
+            border-radius: 0 !important;
+            background: #fff !important;
+            color: #1F2933 !important;
+        }
+
+        .dt-button-collection .dt-button.buttons-columnVisibility:hover,
+        .dt-button-collection .dt-button.buttons-columnVisibility.active {
+            background-color: rgba(47, 174, 122, 0.12) !important;
+            color: #1F2933 !important;
+        }
+    
+        /* Datatable dropdown positioning per reference */
+        .dt-button-collection {
+            position: absolute !important;
+            top: auto !important;
+            left: auto !important;
+            right: 163px !important;
+            z-index: 1050 !important;
+        }
+
+        .dt-button-collection.dtb-b2 {
+            position: absolute !important;
+            top: auto !important;
+            left: auto !important;
+            right: 6px !important;
+            z-index: 1050 !important;
+            min-width: 150px !important;
+        }
     </style>
 @endsection
 
@@ -46,8 +90,8 @@
         </div>
 
         <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-striped" id="driver_table">
+            <div class="card-datatable table-responsive pt-0">
+                <table class="datatables-basic table table-striped" id="driver_table">
                     <thead>
                         <tr>
                             <th>#</th>
@@ -59,6 +103,7 @@
                             <th>Compliance</th>
                             <th>Trip Completion</th>
                             <th>Safety Score</th>
+                            <th>Monthly Salary</th>
                         </tr>
                     </thead>
                 </table>
@@ -134,6 +179,10 @@
                                     name="completed_trips" required data-parsley-required-message="Completed trips is required."
                                     data-parsley-lte="#total_trips">
                             </div>
+                            <div class="col-md-6">
+                                <label for="monthly_salary" class="form-label">Monthly Salary</label>
+                                <input type="number" min="0" step="0.01" class="form-control" id="monthly_salary" name="monthly_salary">
+                            </div>
                             <div class="col-12">
                                 <div class="alert alert-warning mb-0 py-2">
                                     Compliance rule: assignments are blocked when the license is expired.
@@ -174,6 +223,32 @@
         let isEditMode = false;
 
         $(function() {
+            const moduleTableButtons = [{
+                extend: 'colvis',
+                collectionLayout: 'fixed one-column',
+                columns: function(idx, data, node) {
+                    const headerText = String($(node).text() || '').trim().toLowerCase();
+                    return headerText !== '' && headerText !== '#' && headerText !== 'action';
+                },
+                text: '<i class="mdi mdi-eye me-1"></i> Select Columns',
+                className: 'btn btn-label-secondary'
+            }, {
+                extend: 'collection',
+                className: 'btn btn-label-primary dropdown-toggle me-2',
+                text: '<i class="mdi mdi-export-variant me-sm-1"></i> <span class="d-none d-sm-inline-block">Export</span>',
+                buttons: ['print', 'csv', 'excel', 'pdf', 'copy'].map(function(type) {
+                    return {
+                        extend: type,
+                        className: 'dropdown-item',
+                        exportOptions: {
+                            columns: function(idx, data, node) {
+                                return $(node).is(':visible');
+                            }
+                        }
+                    };
+                })
+            }];
+
             driverModal = new bootstrap.Modal(document.getElementById('driverModal'));
             driverForm = $('#driverForm').parsley({
                 excluded: 'input[type=button], input[type=submit], input[type=reset], [disabled]'
@@ -187,6 +262,8 @@
             driverTable = $('#driver_table').DataTable({
                 processing: true,
                 serverSide: true,
+                dom: '<"flex-column flex-md-row"<"head-label text-center"><"dt-action-buttons text-end pt-3 pt-md-0"B>><"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6 d-flex justify-content-center justify-content-md-end"f>>t<"row"<"col-sm-12 col-md-6"i><"col-sm-12 col-md-6"p>>',
+                buttons: moduleTableButtons,
                 ajax: "{{ route('driver.index') }}",
                 columns: [
                     { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
@@ -197,7 +274,8 @@
                     { data: 'status', name: 'status', searchable: false },
                     { data: 'compliance', name: 'compliance', searchable: false },
                     { data: 'trip_completion_rate', name: 'trip_completion_rate', searchable: false },
-                    { data: 'safety_score', name: 'safety_score', searchable: false }
+                    { data: 'safety_score', name: 'safety_score', searchable: false },
+                    { data: 'monthly_salary', name: 'monthly_salary', searchable: false }
                 ]
             });
 
@@ -209,7 +287,7 @@
                 driverForm.validate();
             });
 
-            $('#full_name, #license_number, #email, #phone_number, #license_expiry_date, #total_trips, #completed_trips, #safety_score')
+            $('#full_name, #license_number, #email, #phone_number, #license_expiry_date, #total_trips, #completed_trips, #safety_score, #monthly_salary')
                 .on('input change blur', function() {
                     const field = $(this).parsley();
                     field.removeError('server', { updateClass: true });
@@ -239,6 +317,7 @@
                     total_trips: $('#total_trips').val(),
                     completed_trips: $('#completed_trips').val(),
                     safety_score: $('#safety_score').val(),
+                    monthly_salary: $('#monthly_salary').val(),
                     status: $('#status').val()
                 };
 
@@ -300,7 +379,7 @@
         }
 
         function clearServerErrors() {
-            ['full_name', 'email', 'phone_number', 'license_number', 'license_expiry_date', 'total_trips', 'completed_trips', 'safety_score', 'status']
+            ['full_name', 'email', 'phone_number', 'license_number', 'license_expiry_date', 'total_trips', 'completed_trips', 'safety_score', 'monthly_salary', 'status']
                 .forEach(function(field) {
                     const input = $('#' + field);
                     if (input.length && input.parsley()) {
@@ -333,6 +412,7 @@
                 $('#total_trips').val(row.total_trips);
                 $('#completed_trips').val(row.completed_trips);
                 $('#safety_score').val(row.safety_score);
+                $('#monthly_salary').val(row.monthly_salary);
                 $('#status').val(row.status).trigger('change');
                 driverForm.reset();
                 driverModal.show();
@@ -374,3 +454,4 @@
         }
     </script>
 @endsection
+

@@ -58,6 +58,27 @@
             </a>
         </li>
 
+        <li class="menu-item {{ request()->routeIs('maintenance-log.*') ? 'active' : '' }}">
+            <a href="{{ route('maintenance-log.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons mdi mdi-tools"></i>
+                <div>Maintenance Logs</div>
+            </a>
+        </li>
+
+        <li class="menu-item {{ request()->routeIs('fuel-log.*') ? 'active' : '' }}">
+            <a href="{{ route('fuel-log.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons mdi mdi-fuel"></i>
+                <div>Fuel Logs</div>
+            </a>
+        </li>
+
+        <li class="menu-item {{ request()->routeIs('analytics.*') ? 'active' : '' }}">
+            <a href="{{ route('analytics.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons mdi mdi-chart-line"></i>
+                <div>Operational Analytics</div>
+            </a>
+        </li>
+
         <li class="menu-item">
             <a href="{{ route('logout') }}" class="menu-link" onclick="event.preventDefault();document.getElementById('logout-form').submit();">
                 <i class="menu-icon tf-icons mdi mdi-logout"></i>
