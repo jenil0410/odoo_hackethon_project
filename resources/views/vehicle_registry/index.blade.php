@@ -1,0 +1,318 @@
+@extends('layouts.app')
+@section('title', 'Vehicle Registry')
+
+@section('styles')
+    <style>
+        .addButton {
+            color: #fff !important;
+            background-color: transparent !important;
+            border: 1px solid #fff !important;
+        }
+
+        .addButton:hover {
+            color: #1F7A4C !important;
+            background-color: #fff !important;
+        }
+
+        .module-card-header {
+            background-color: #1F7A4C !important;
+            border-radius: 10px;
+        }
+
+        .module-card-header .card-title {
+            color: #fff !important;
+            background: transparent !important;
+            border: 0 !important;
+            border-radius: 0 !important;
+            padding: 0 !important;
+        }
+
+        .vehicle-modal .modal-content {
+            border-radius: 14px;
+            border: 0;
+        }
+    </style>
+@endsection
+
+@section('content')
+    <div class="card">
+        <div class="card-header d-flex align-items-center justify-content-between py-2 module-card-header">
+            <h5 class="card-title m-0 me-2">Vehicle Registry</h5>
+            @if ($createCheck)
+                <button type="button" class="btn btn-primary waves-effect waves-light addButton" id="openCreateVehicleModal">
+                    Add Vehicle
+                </button>
+            @endif
+        </div>
+
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped" id="vehicle_registry_table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Action</th>
+                            <th>Name / Model</th>
+                            <th>License Plate</th>
+                            <th>Max Load Capacity</th>
+                            <th>Odometer</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade vehicle-modal" id="vehicleRegistryModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0 pb-2">
+                    <h5 class="modal-title" id="vehicleModalTitle">Add Vehicle</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="vehicleRegistryForm" data-parsley-validate>
+                    @csrf
+                    <input type="hidden" id="vehicle_id" name="vehicle_id">
+                    <div class="modal-body pt-2">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="name_model" class="form-label">Name / Model</label>
+                                <input type="text" class="form-control" id="name_model" name="name_model" required
+                                    data-parsley-required-message="Name/Model is required.">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="license_plate" class="form-label">License Plate (Unique)</label>
+                                <input type="text" class="form-control" id="license_plate" name="license_plate" required
+                                    data-parsley-required-message="License plate is required.">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="max_load_capacity" class="form-label">Max Load Capacity</label>
+                                <input type="number" step="0.01" min="0" class="form-control" id="max_load_capacity"
+                                    name="max_load_capacity" required data-parsley-required-message="Max load capacity is required.">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="load_unit" class="form-label">Unit</label>
+                                <select class="form-select select2" id="load_unit" name="load_unit" required
+                                    data-parsley-required-message="Unit is required."
+                                    data-parsley-errors-container="#load_unit_err">
+                                    <option value="">Select Unit</option>
+                                    <option value="kg">kg</option>
+                                    <option value="tons">tons</option>
+                                </select>
+                                <small class="red-text ml-10" id="load_unit_err" role="alert"></small>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="odometer" class="form-label">Odometer</label>
+                                <input type="number" step="0.01" min="0" class="form-control" id="odometer"
+                                    name="odometer" required data-parsley-required-message="Odometer is required.">
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check form-switch mt-2">
+                                    <input class="form-check-input" type="checkbox" id="is_out_of_service" name="is_out_of_service" value="1">
+                                    <label class="form-check-label" for="is_out_of_service">Out of Service (Retired)</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 pt-2">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="saveVehicleBtn">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+@endsection
+
+@section('scripts')
+    <script src="{{ asset('assets/js/parsley.min.js') }}"></script>
+    <script>
+        let vehicleTable;
+        let vehicleModal;
+        let vehicleForm;
+        let isEditMode = false;
+
+        $(function() {
+            vehicleModal = new bootstrap.Modal(document.getElementById('vehicleRegistryModal'));
+            vehicleForm = $('#vehicleRegistryForm').parsley({
+                excluded: 'input[type=button], input[type=submit], input[type=reset], [disabled]'
+            });
+
+            vehicleTable = $('#vehicle_registry_table').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: "{{ route('vehicle-registry.index') }}",
+                columns: [
+                    { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
+                    { data: 'action', name: 'action', orderable: false, searchable: false },
+                    { data: 'name_model', name: 'name_model' },
+                    { data: 'license_plate', name: 'license_plate' },
+                    { data: 'max_load_capacity', name: 'max_load_capacity', searchable: false },
+                    { data: 'odometer', name: 'odometer', searchable: false },
+                    { data: 'is_out_of_service', name: 'is_out_of_service', orderable: false, searchable: false }
+                ]
+            });
+
+            $('#load_unit').on('change', function() {
+                vehicleForm.validate();
+            });
+
+            $('#name_model, #license_plate, #max_load_capacity, #odometer').on('input change blur', function() {
+                const field = $(this).parsley();
+                field.removeError('server', { updateClass: true });
+                field.validate();
+            });
+
+            $('#openCreateVehicleModal').on('click', function() {
+                openVehicleCreateModal();
+            });
+
+            $('#vehicleRegistryForm').on('submit', function(e) {
+                e.preventDefault();
+                clearServerErrors();
+
+                if (!vehicleForm.isValid()) {
+                    return;
+                }
+
+                const vehicleId = $('#vehicle_id').val();
+                const url = isEditMode
+                    ? "{{ url('vehicle-registry') }}/" + vehicleId
+                    : "{{ route('vehicle-registry.store') }}";
+
+                const payload = {
+                    _token: "{{ csrf_token() }}",
+                    name_model: $('#name_model').val(),
+                    license_plate: $('#license_plate').val(),
+                    max_load_capacity: $('#max_load_capacity').val(),
+                    load_unit: $('#load_unit').val(),
+                    odometer: $('#odometer').val(),
+                    is_out_of_service: $('#is_out_of_service').is(':checked') ? 1 : 0
+                };
+
+                if (isEditMode) {
+                    payload._method = 'PUT';
+                }
+
+                $('#saveVehicleBtn').prop('disabled', true);
+
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    data: payload,
+                    success: function(response) {
+                        $('#saveVehicleBtn').prop('disabled', false);
+                        vehicleModal.hide();
+                        vehicleTable.ajax.reload(null, false);
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success',
+                            text: response.message,
+                            confirmButtonText: 'OK',
+                            showCancelButton: false
+                        });
+                    },
+                    error: function(xhr) {
+                        $('#saveVehicleBtn').prop('disabled', false);
+                        if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+                            const errors = xhr.responseJSON.errors;
+                            Object.keys(errors).forEach(function(field) {
+                                const input = $('#' + field);
+                                if (input.length) {
+                                    input.parsley().addError('server', {
+                                        message: errors[field][0],
+                                        updateClass: true
+                                    });
+                                }
+                            });
+                        } else {
+                            Swal.fire('Error', 'Something went wrong. Please try again.', 'error');
+                        }
+                    }
+                });
+            });
+
+            $('#vehicleRegistryModal').on('hidden.bs.modal', function() {
+                resetVehicleForm();
+            });
+        });
+
+        function resetVehicleForm() {
+            $('#vehicleRegistryForm')[0].reset();
+            $('#vehicle_id').val('');
+            $('#load_unit').val('').trigger('change');
+            $('#is_out_of_service').prop('checked', false);
+            isEditMode = false;
+            $('#vehicleModalTitle').text('Add Vehicle');
+            $('#saveVehicleBtn').text('Save');
+            vehicleForm.reset();
+        }
+
+        function clearServerErrors() {
+            ['name_model', 'license_plate', 'max_load_capacity', 'load_unit', 'odometer'].forEach(function(field) {
+                const input = $('#' + field);
+                if (input.length && input.parsley()) {
+                    input.parsley().removeError('server', {
+                        updateClass: true
+                    });
+                }
+            });
+        }
+
+        function openVehicleCreateModal() {
+            resetVehicleForm();
+            clearServerErrors();
+            vehicleModal.show();
+        }
+
+        function openVehicleEditModal(id) {
+            resetVehicleForm();
+            clearServerErrors();
+            isEditMode = true;
+            $('#vehicleModalTitle').text('Update Vehicle');
+            $('#saveVehicleBtn').text('Update');
+
+            $.get("{{ url('vehicle-registry/fetch') }}/" + id, function(response) {
+                const row = response.data;
+                $('#vehicle_id').val(row.id);
+                $('#name_model').val(row.name_model);
+                $('#license_plate').val(row.license_plate);
+                $('#max_load_capacity').val(row.max_load_capacity);
+                $('#load_unit').val(row.load_unit).trigger('change');
+                $('#odometer').val(row.odometer);
+                $('#is_out_of_service').prop('checked', !!row.is_out_of_service);
+                vehicleForm.reset();
+                vehicleModal.show();
+            }).fail(function() {
+                Swal.fire('Error', 'Unable to fetch vehicle details.', 'error');
+            });
+        }
+
+        function deleteVehicle(id, licensePlate) {
+            Swal.fire({
+                title: 'Are you sure?',
+                text: 'You want to delete vehicle ' + licensePlate + '.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'OK',
+                cancelButtonText: 'Cancel'
+            }).then(function(result) {
+                if (!result.isConfirmed) {
+                    return;
+                }
+
+                $.get("{{ url('vehicle-registry/delete') }}/" + id, function(response) {
+                    if (response.status) {
+                        vehicleTable.ajax.reload(null, false);
+                        Swal.fire('Deleted', response.message, 'success');
+                    } else {
+                        Swal.fire('Error', response.message, 'error');
+                    }
+                }).fail(function() {
+                    Swal.fire('Error', 'Unable to delete vehicle.', 'error');
+                });
+            });
+        }
+    </script>
+@endsection

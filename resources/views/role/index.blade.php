@@ -74,7 +74,8 @@ function deleteRole(id, name) {
         text: 'You want to delete ' + name + '.',
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonText: 'Yes, delete it'
+        confirmButtonText: 'OK',
+        cancelButtonText: 'Cancel'
     }).then(function(result) {
         if (!result.isConfirmed) return;
 

@@ -37,6 +37,13 @@
             </a>
         </li>
 
+        <li class="menu-item {{ request()->routeIs('vehicle-registry.*') ? 'active' : '' }}">
+            <a href="{{ route('vehicle-registry.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons mdi mdi-truck-outline"></i>
+                <div>Vehicle Registry</div>
+            </a>
+        </li>
+
         <li class="menu-item">
             <a href="{{ route('logout') }}" class="menu-link" onclick="event.preventDefault();document.getElementById('logout-form').submit();">
                 <i class="menu-icon tf-icons mdi mdi-logout"></i>
